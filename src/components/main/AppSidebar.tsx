@@ -6,6 +6,7 @@ import { MessageSquare, Settings, UserPlus, Bell } from "lucide-react";
 import { MdWebStories } from "react-icons/md";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logoutUser } from "@/lib/api";
 
 const navItems = [
   { id: "Chats", icon: MessageSquare, label: "Chats", href: "/app" },
@@ -91,9 +92,9 @@ export default function AppSidebar() {
 
         {/* User Avatar with Online Indicator */}
         <div className="relative group cursor-pointer">
-          <div className="w-10 h-10 rounded-2xl bg-[#5E3122] text-[#F7EAE0] font-bold text-xs flex items-center justify-center shadow-md">
+          <button onClick={logoutUser} className="w-10 h-10 rounded-2xl bg-[#5E3122] text-[#F7EAE0] font-bold text-xs flex items-center justify-center shadow-md">
             AM
-          </div>
+          </button>
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#F7EAE0] rounded-full" />
         </div>
       </div>

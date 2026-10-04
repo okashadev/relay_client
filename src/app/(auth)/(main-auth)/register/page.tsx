@@ -23,6 +23,7 @@ import {
 import { RegisterFormValues, registerSchema } from "@/validators/auth";
 import { calculatePasswordStrength } from "@/utils/password";
 import { toast } from "sonner";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,7 +31,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // State to handle screen view: 'options' | 'email-form'
   const [view, setView] = useState<"options" | "email-form">("options");
 
   const {
@@ -78,7 +78,9 @@ export default function RegisterPage() {
       }
 
       toast.success(resData.message || "Account created successfully!");
-      router.push(`/verify-email?email=${encodeURIComponent(resData.user?.email)}`);
+      router.push(
+        `/verify-email?email=${encodeURIComponent(resData.user?.email)}`,
+      );
     } catch (err: any) {
       setServerError(err.error || "Something went wrong during registration");
     } finally {
@@ -141,34 +143,7 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              {/* Google Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  // Add your Google auth trigger logic here if needed later
-                }}
-                className="w-full py-3.5 px-4 bg-[#F7EAE0] hover:bg-[#F9D2BA]/40 border border-[#1D4533]/20 rounded-xl flex items-center justify-center gap-3 text-xs font-bold text-[#1D4533] transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#EA4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"
-                  />
-                  <path
-                    fill="#4285F4"
-                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12.3s.7 2.6 1.9 5l3.7-2.5z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                  />
-                </svg>
-                <span>Continue with Google</span>
-              </button>
+              <GoogleAuthButton onError={setServerError} />
 
               <div className="relative my-4 flex items-center justify-center">
                 <div className="w-full border-t border-[#1D4533]/15" />
@@ -177,7 +152,6 @@ export default function RegisterPage() {
                 </span>
               </div>
 
-              {/* Continue with Email Button */}
               <button
                 type="button"
                 onClick={() => setView("email-form")}
@@ -188,7 +162,6 @@ export default function RegisterPage() {
               </button>
             </motion.div>
           ) : (
-            /* Email Form View */
             <motion.div
               key="email-form"
               initial={{ opacity: 0, x: 10 }}
@@ -196,7 +169,6 @@ export default function RegisterPage() {
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.25 }}
             >
-              {/* Back Button to Switch Tab back */}
               <button
                 type="button"
                 onClick={() => setView("options")}
@@ -210,7 +182,6 @@ export default function RegisterPage() {
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-3.5 relative z-10"
               >
-                {/* Full Name */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1D4533] block">
                     Full Name
@@ -231,7 +202,6 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Username */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1D4533] block">
                     Username
@@ -252,7 +222,6 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Email */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1D4533] block">
                     Email Address
@@ -273,7 +242,6 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Password */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1D4533] block">
                     Password
@@ -305,7 +273,6 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Animated Password Strength Bar */}
                 {watchPassword.length > 0 && (
                   <div className="space-y-1 pt-0.5">
                     <div className="flex justify-between items-center text-[11px] font-semibold">
@@ -325,7 +292,6 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                {/* Live Requirements Checklist */}
                 <div className="p-3 bg-[#1D4533]/5 rounded-xl space-y-1.5 text-[11px]">
                   <p className="font-semibold text-[#1D4533] mb-1">
                     Password requirements:
@@ -358,7 +324,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Terms Checkbox */}
                 <div className="flex flex-col gap-1 pt-1">
                   <div className="flex items-start gap-2">
                     <input
@@ -394,7 +359,6 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Submit Button */}
                 <motion.button
                   type="submit"
                   whileHover={{ scale: 1.01 }}
