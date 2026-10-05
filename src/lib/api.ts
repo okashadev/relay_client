@@ -1,14 +1,12 @@
 import { useAuthStore } from "@/store/authStore";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 let refreshPromise: Promise<string | null> | null = null;
 
 export const refreshSession = (): Promise<string | null> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/auth/refresh`, {
+        const res = await fetch(`/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
         });
@@ -32,7 +30,7 @@ export const refreshSession = (): Promise<string | null> => {
 
 export const apiFetch = async (path: string, options: RequestInit = {}) => {
   const send = (token: string | null) =>
-    fetch(`${API_URL}${path}`, {
+    fetch(path, {
       ...options,
       credentials: "include",
       headers: {
@@ -66,7 +64,7 @@ export const apiFetch = async (path: string, options: RequestInit = {}) => {
 
 export const logoutUser = async () => {
   try {
-    await fetch(`${API_URL}/api/auth/logout`, {
+    await fetch(`/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

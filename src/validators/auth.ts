@@ -1,31 +1,70 @@
 import z from "zod";
 
+const MAX_PASSWORD_BYTES = 72;
+
+const RESERVED_USERNAMES = new Set([
+  "admin",
+  "administrator",
+  "root",
+  "system",
+  "support",
+  "help",
+  "moderator",
+  "api",
+  "null",
+  "undefined",
+]);
+
+const emailField = z
+  .string({ error: "Email is required." })
+  .trim()
+  .toLowerCase()
+  .max(254, "Email is too long.")
+  .pipe(z.email("Please enter a valid email address."));
+
+const withinBcryptLimit = (value: string) =>
+  Buffer.byteLength(value, "utf8") <= MAX_PASSWORD_BYTES;
+
 export const registerSchema = z.object({
-  name: z.string().min(2, "Full name is required"),
+  name: z
+    .string({ error: "Name is required." })
+    .trim()
+    .min(2, "Name must be at least 2 characters long.")
+    .max(30, "Name cannot exceed 30 characters."),
+
   username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
+    .string({ error: "Username is required." })
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters long.")
+    .max(20, "Username cannot exceed 20 characters.")
     .regex(
-      /^[a-zA-Z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores",
+      /^[a-z0-9_]+$/,
+      "Username can only contain letters, numbers and underscores.",
+    )
+    .refine(
+      (value) => !RESERVED_USERNAMES.has(value),
+      "This username is not available.",
     ),
-  email: z.email("Enter a valid email address").min(1, "Email is required"),
+
+  email: emailField,
+
   password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
+    .string({ error: "Password is required." })
+    .min(8, "Password must be at least 8 characters long.")
+    .refine(withinBcryptLimit, "Password is too long."),
+
   terms: z.boolean().refine((val) => val === true, "You must accept the terms"),
 });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z.email("Enter a valid email address").min(1, "Email is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: emailField,
+  password: z
+    .string({ error: "Password is required." })
+    .min(1, "Password is required.")
+    .refine(withinBcryptLimit, "Invalid email or password."),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
-
-
-

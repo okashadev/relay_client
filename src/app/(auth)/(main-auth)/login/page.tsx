@@ -45,34 +45,33 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
+      const res = await fetch(`/api/auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(data),
+      });
 
       const resData = await res.json();
 
       console.log(resData);
 
       if (!res.ok) {
+        if (!resData.user?.isEmailVerified) {
+          toast.warning("Please Verify Your Email");
+          router.push(
+            `/verify-email?email=${encodeURIComponent(resData.email)}`,
+          );
+          throw new Error(resData.error || "Please verify your email before logging in.");
+          return;
+        }
+        
         throw new Error(resData.error || "Something went wrong during login");
       }
 
       if (resData.success) {
-        if (!resData.user?.isEmailVerified) {
-          toast.warning("Please Verify Your Email");
-          router.push(
-            `/verify-email?email=${encodeURIComponent(resData.user?.email)}`,
-          );
-          return
-        }
         setAuth(resData.token, resData.user);
         toast.success("Login successfull!");
         router.push(getRedirectTarget());
