@@ -7,6 +7,7 @@ import { MdWebStories } from "react-icons/md";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutUser } from "@/lib/api";
+import NotificationBadge from "@/components/notifications/NotificationBadge";
 
 const navItems = [
   { id: "Chats", icon: MessageSquare, label: "Chats", href: "/app" },
@@ -21,7 +22,7 @@ const navItems = [
 ];
 
 export default function AppSidebar() {
- const pathName = usePathname();
+  const pathName = usePathname();
   const [activeTab, setActiveTab] = useState("");
 
   useEffect(() => {
@@ -68,6 +69,9 @@ export default function AppSidebar() {
                 title={item.label}
               >
                 <Icon className="w-5 h-5" />
+                {item.id === "Notifications" && (
+                  <NotificationBadge className="absolute -top-1 -right-1 z-10 border-2 border-[#F7EAE0]" />
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="activeNavIndicator"
@@ -92,7 +96,10 @@ export default function AppSidebar() {
 
         {/* User Avatar with Online Indicator */}
         <div className="relative group cursor-pointer">
-          <button onClick={logoutUser} className="w-10 h-10 rounded-2xl bg-[#5E3122] text-[#F7EAE0] font-bold text-xs flex items-center justify-center shadow-md">
+          <button
+            onClick={logoutUser}
+            className="w-10 h-10 rounded-2xl bg-[#5E3122] text-[#F7EAE0] font-bold text-xs flex items-center justify-center shadow-md"
+          >
             AM
           </button>
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#F7EAE0] rounded-full" />

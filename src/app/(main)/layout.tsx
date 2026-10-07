@@ -3,6 +3,7 @@
 import React from "react";
 import AppSidebar from "@/components/main/AppSidebar";
 import AuthGuard from "@/components/auth/AuthGuard";
+import NotificationsSync from "@/components/notifications/NotificationsSync";
 
 export default function MainLayout({
   children,
@@ -12,6 +13,7 @@ export default function MainLayout({
   return (
     <>
       <AuthGuard>
+        <NotificationsSync />
         <div className="h-screen w-full flex bg-[#F7EAE0] overflow-hidden">
           <AppSidebar />
 

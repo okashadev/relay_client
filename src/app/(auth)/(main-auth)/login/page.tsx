@@ -59,15 +59,16 @@ export default function LoginPage() {
       console.log(resData);
 
       if (!res.ok) {
-        if (!resData.user?.isEmailVerified) {
+        if (resData.code === "EMAIL_NOT_VERIFIED") {
           toast.warning("Please Verify Your Email");
           router.push(
             `/verify-email?email=${encodeURIComponent(resData.email)}`,
           );
-          throw new Error(resData.error || "Please verify your email before logging in.");
-          return;
+          throw new Error(
+            resData.error || "Please verify your email before logging in.",
+          );
         }
-        
+
         throw new Error(resData.error || "Something went wrong during login");
       }
 

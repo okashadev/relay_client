@@ -69,7 +69,6 @@ export default function RegisterPage() {
       });
 
       const resData = await response.json();
-      console.log(resData);
 
       if (!response.ok) {
         throw new Error(
@@ -79,7 +78,7 @@ export default function RegisterPage() {
 
       toast.success(resData.message || "Account created successfully!");
       router.push(
-        `/verify-email?email=${encodeURIComponent(resData.user?.email)}`,
+        `/verify-email?email=${encodeURIComponent(resData.email)}`,
       );
     } catch (err: any) {
       setServerError(err.error || "Something went wrong during registration");

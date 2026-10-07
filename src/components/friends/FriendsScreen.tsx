@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -11,67 +11,77 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import AddFriendScreen from "./AddFriendScreen";
+import Link from "next/link";
+import NotificationBadge from "@/components/notifications/NotificationBadge";
+import { fetchFriends, FriendUser } from "@/lib/friendsApi";
+import UserAvatar from "../common/UserAvatar";
 
-const INITIAL_FRIENDS = [
-  {
-    id: "1",
-    name: "Okasha Khan",
-    role: "Design Lead",
-    status: "Online",
-    avatar: "OK",
-    mutual: 4,
-  },
-  {
-    id: "2",
-    name: "Sarah Jenkins",
-    role: "Frontend Engineer",
-    status: "In a meeting",
-    avatar: "SJ",
-    mutual: 2,
-  },
-  {
-    id: "3",
-    name: "Rabeet",
-    role: "Security Ops",
-    status: "Offline",
-    avatar: "R",
-    mutual: 6,
-  },
-  {
-    id: "4",
-    name: "wasif",
-    role: "Product Manager",
-    status: "Online",
-    avatar: "U",
-    mutual: 1,
-  },
-];
-
-const INITIAL_REQUESTS = [
-  {
-    id: "r1",
-    name: "Zainab Malik",
-    role: "UI/UX Designer",
-    avatar: "ZM",
-    mutual: 3,
-  },
-  { id: "r2", name: "Hamza Ali", role: "Backend Dev", avatar: "HA", mutual: 5 },
-];
+function FriendSkeleton() {
+  return (
+    <div className="bg-white border border-[#1D4533]/15 rounded-3xl p-5 shadow-sm animate-pulse">
+      <div className="flex items-center gap-3.5">
+        <div className="w-12 h-12 rounded-2xl bg-[#1D4533]/10" />
+        <div className="space-y-2">
+          <div className="h-3 w-28 rounded bg-[#1D4533]/10" />
+          <div className="h-2.5 w-20 rounded bg-[#1D4533]/10" />
+        </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-[#1D4533]/10 flex justify-end">
+        <div className="h-8 w-8 rounded-xl bg-[#1D4533]/10" />
+      </div>
+    </div>
+  );
+}
 
 export default function FriendsScreen() {
   const [currentView, setCurrentView] = useState<"list" | "add">("list");
   const [searchQuery, setSearchQuery] = useState("");
-  const [friends, setFriends] = useState(INITIAL_FRIENDS);
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const [friends, setFriends] = useState<FriendUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const filteredFriends = friends.filter(
-    (f) =>
-      f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.role.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        setFriends(await fetchFriends(controller.signal));
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    };
+
+    load();
+
+    return () => controller.abort();
+  }, [reloadKey]);
+
+  const query = searchQuery.trim().toLowerCase();
+
+  const filteredFriends = query
+    ? friends.filter(
+        (friend) =>
+          friend.name.toLowerCase().includes(query) ||
+          friend.username.toLowerCase().includes(query),
+      )
+    : friends;
 
   if (currentView === "add") {
-    return <AddFriendScreen onBack={() => setCurrentView("list")} />;
+    return (
+      <AddFriendScreen
+        onBack={() => {
+          setCurrentView("list");
+          setReloadKey((key) => key + 1);
+        }}
+      />
+    );
   }
 
   return (
@@ -95,22 +105,14 @@ export default function FriendsScreen() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Requests Toggle Button with Badge */}
-            <motion.a
+            <Link
               href="/notifications"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative flex items-center gap-2 px-4 py-2.5 bg-white border border-[#1D4533]/15 rounded-2xl shadow-sm text-xs font-bold text-[#1D4533] hover:bg-[#1D4533]/5 transition-all cursor-pointer"
+              className="relative flex items-center gap-2 px-4 py-2.5 bg-white border border-[#1D4533]/15 rounded-2xl shadow-sm text-xs font-bold text-[#1D4533] hover:bg-[#1D4533]/5 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
               <Bell size={15} className="text-[#1D4533]" />
               <span className="hidden sm:inline">Requests</span>
-              {requests.length > 0 && (
-                <span className="w-5 h-5 bg-[#1D4533] text-[#F7EAE0] rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
-                  {requests.length}
-                </span>
-              )}
-            </motion.a>
-
+              <NotificationBadge source="requests" />
+            </Link>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -132,7 +134,10 @@ export default function FriendsScreen() {
             />
             <input
               type="text"
-              placeholder="Search friends by name or role..."
+              aria-label="Search friends by name or username"
+              placeholder="Search friends by name or username..."
+              autoComplete="off"
+              maxLength={50}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white/80 border border-[#1D4533]/15 rounded-2xl pl-10 pr-4 py-3 text-xs text-[#1D4533] placeholder-[#1D4533]/50 focus:outline-none focus:ring-2 focus:ring-[#1D4533]/30 shadow-sm font-medium"
@@ -140,8 +145,30 @@ export default function FriendsScreen() {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 text-xs font-semibold flex items-center justify-between gap-3">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+              className="underline shrink-0 cursor-pointer"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         {/* Friends Grid List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-6">
+        <div
+          aria-live="polite"
+          className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-6 transition-opacity ${
+            isLoading && friends.length > 0 ? "opacity-60" : "opacity-100"
+          }`}
+        >
+          {isLoading &&
+            friends.length === 0 &&
+            Array.from({ length: 6 }).map((_, i) => <FriendSkeleton key={i} />)}
+
           {filteredFriends.map((friend) => (
             <motion.div
               key={friend.id}
@@ -150,43 +177,55 @@ export default function FriendsScreen() {
               transition={{ duration: 0.2 }}
               className="bg-white border border-[#1D4533]/15 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-2xl bg-[#1D4533] text-[#F7EAE0] flex items-center justify-center font-bold text-sm shadow">
-                      {friend.avatar}
-                    </div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="relative shrink-0">
+                    <UserAvatar name={friend.name} avatar={friend.avatar} />
                     <span
+                      aria-label={
+                        friend.status === "ONLINE" ? "Online" : "Offline"
+                      }
                       className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                        friend.status === "Online"
+                        friend.status === "ONLINE"
                           ? "bg-emerald-500"
-                          : "bg-amber-500"
+                          : "bg-[#1D4533]/30"
                       }`}
                     />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#1D4533] group-hover:underline flex items-center gap-1">
-                      {friend.name}
-                      <ShieldCheck size={13} className="text-[#1D4533]" />
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-[#1D4533] group-hover:underline flex items-center gap-1 min-w-0">
+                      <span className="truncate">{friend.name}</span>
+                      <ShieldCheck
+                        size={13}
+                        className="text-[#1D4533] shrink-0"
+                      />
                     </h3>
-                    <p className="text-xs text-[#1D4533]/70 font-medium">
-                      {friend.role}
+                    <p className="text-xs text-[#1D4533]/70 font-medium truncate">
+                      @{friend.username}
                     </p>
                   </div>
                 </div>
-                <button className="p-2 rounded-xl text-[#1D4533]/60 hover:bg-[#1D4533]/10 transition-all cursor-pointer">
+                {/* TODO: unfriend / block menu yahan aayega */}
+                <button
+                  type="button"
+                  aria-label="More options"
+                  className="p-2 rounded-xl text-[#1D4533]/60 hover:bg-[#1D4533]/10 transition-all cursor-pointer shrink-0"
+                >
                   <MoreVertical size={16} />
                 </button>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-[#1D4533]/10 flex items-center justify-between">
-                <span className="text-[11px] text-[#1D4533]/60 font-medium">
-                  {friend.mutual} mutual connections
+              <div className="mt-4 pt-4 border-t border-[#1D4533]/10 flex items-center justify-between gap-3">
+                <span className="text-[11px] text-[#1D4533]/60 font-medium truncate">
+                  {friend.bio || "No bio yet"}
                 </span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* TODO: chat banne ke baad yahan se conversation khulegi */}
                   <button
+                    type="button"
                     className="p-2 rounded-xl bg-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0] transition-all cursor-pointer"
                     title="Message"
+                    aria-label={`Message ${friend.name}`}
                   >
                     <MessageSquare size={14} />
                   </button>
@@ -195,78 +234,32 @@ export default function FriendsScreen() {
             </motion.div>
           ))}
         </div>
-      </div>
 
-      {/* Responsive Slide-over Panel for Friend Requests */}
-      {/* <AnimatePresence>
-        {showRequestsPanel && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowRequestsPanel(false)}
-              className="absolute inset-0 bg-black/30 backdrop-blur-xs z-20 lg:hidden"
-            />
-            <motion.div 
-              initial={{ x: 320, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 320, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 h-full w-80 lg:w-96 bg-white border-l border-[#1D4533]/15 shadow-2xl flex flex-col z-30"
+        {!isLoading && !error && friends.length === 0 && (
+          <div className="p-8 bg-white/60 border border-dashed border-[#1D4533]/20 rounded-3xl text-center space-y-3">
+            <p className="text-xs font-medium text-[#1D4533]/70">
+              You don&apos;t have any friends yet. Find people to connect with.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCurrentView("add")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1D4533] text-[#F7EAE0] rounded-2xl shadow-md text-xs font-bold hover:bg-[#1D4533]/90 transition-all cursor-pointer"
             >
-              <div className="p-5 border-b border-[#1D4533]/10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell size={18} className="text-[#1D4533]" />
-                  <h2 className="text-sm font-bold text-[#1D4533]">Friend Requests ({requests.length})</h2>
-                </div>
-                <button 
-                  onClick={() => setShowRequestsPanel(false)}
-                  className="p-1.5 rounded-xl text-[#1D4533]/60 hover:bg-[#1D4533]/10 transition-all cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {requests.length === 0 ? (
-                  <div className="text-center py-12 text-[#1D4533]/50 text-xs font-medium">
-                    No pending friend requests.
-                  </div>
-                ) : (
-                  requests.map(req => (
-                    <div key={req.id} className="p-3.5 bg-[#F7EAE0]/60 border border-[#1D4533]/15 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#1D4533] text-[#F7EAE0] flex items-center justify-center font-bold text-xs">
-                          {req.avatar}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-[#1D4533] truncate">{req.name}</h4>
-                          <p className="text-[10px] text-[#1D4533]/70 truncate font-medium">{req.role}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handleAcceptRequest(req.id)}
-                          className="flex-1 py-1.5 bg-[#1D4533] text-[#F7EAE0] rounded-xl text-xs font-bold hover:bg-[#1D4533]/90 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
-                        >
-                          <Check size={14} /> Accept
-                        </button>
-                        <button 
-                          onClick={() => handleRejectRequest(req.id)}
-                          className="flex-1 py-1.5 bg-white border border-[#1D4533]/20 text-[#1D4533] rounded-xl text-xs font-bold hover:bg-[#1D4533]/10 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <X size={14} /> Decline
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </>
+              <UserPlus size={15} />
+              <span>Add Friends</span>
+            </button>
+          </div>
         )}
-      </AnimatePresence> */}
+
+        {!isLoading &&
+          !error &&
+          friends.length > 0 &&
+          filteredFriends.length === 0 && (
+            <div className="p-6 bg-white/60 border border-dashed border-[#1D4533]/20 rounded-3xl text-center text-xs font-medium text-[#1D4533]/70">
+              No friends match that search.
+            </div>
+          )}
+      </div>
     </div>
   );
 }
