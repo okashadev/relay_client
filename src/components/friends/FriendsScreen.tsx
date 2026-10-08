@@ -15,6 +15,8 @@ import Link from "next/link";
 import NotificationBadge from "@/components/notifications/NotificationBadge";
 import { fetchFriends, FriendUser } from "@/lib/friendsApi";
 import UserAvatar from "../common/UserAvatar";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
 
 function FriendSkeleton() {
   return (
@@ -62,6 +64,15 @@ export default function FriendsScreen() {
 
     return () => controller.abort();
   }, [reloadKey]);
+
+  useSocketEvent<FriendshipUpdatedPayload>(
+    SOCKET_EVENTS.FRIENDSHIP_UPDATED,
+    ({ relationship }) => {
+      if (relationship === "FRIENDS" || relationship === "NONE") {
+        setReloadKey((key) => key + 1);
+      }
+    },
+  );
 
   const query = searchQuery.trim().toLowerCase();
 

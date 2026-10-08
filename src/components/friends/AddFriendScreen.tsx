@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Search, ArrowLeft, RefreshCw } from "lucide-react";
 import {
   acceptFriendRequest,
+  cancelFriendRequest,
   fetchSuggestions,
   rejectFriendRequest,
   searchUsers,
@@ -17,6 +18,8 @@ import UserAvatar from "../common/UserAvatar";
 import RelationshipAction from "./RelationshipAction";
 import { useNotificationStore } from "@/store/notificationStore";
 import { ApiError } from "@/lib/apiRequest";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
 
 function UserSkeleton() {
   return (
@@ -110,6 +113,16 @@ export default function AddFriendScreen({ onBack }: AddFriendScreenProps) {
       prev.map((user) => (user.id === userId ? { ...user, ...changes } : user)),
     );
 
+  useSocketEvent<FriendshipUpdatedPayload>(
+    SOCKET_EVENTS.FRIENDSHIP_UPDATED,
+    ({ userId, relationship, friendshipId }) => {
+      updateUser(userId, {
+        relationship,
+        friendshipId: relationship === "NONE" ? null : friendshipId,
+      });
+    },
+  );
+
   const handleSendRequest = async (userId: string) => {
     if (sendingIds.has(userId)) return;
 
@@ -141,6 +154,46 @@ export default function AddFriendScreen({ onBack }: AddFriendScreenProps) {
   const openCancelDialog = (user: FriendUser) => {
     setCancelTarget(user);
     setIsCancelOpen(true);
+  };
+
+  const closeCancelDialog = () => {
+    if (!isCancelling) setIsCancelOpen(false);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget || isCancelling) return;
+
+    const target = cancelTarget;
+
+    if (!target.friendshipId) {
+      updateUser(target.id, { relationship: "NONE" });
+      setIsCancelOpen(false);
+      return;
+    }
+
+    setIsCancelling(true);
+
+    try {
+      const { relationship, friendshipId } = await cancelFriendRequest(
+        target.friendshipId,
+      );
+
+      updateUser(target.id, { relationship, friendshipId });
+
+      if (relationship === "FRIENDS") {
+        toast.info("They already accepted your request.");
+      } else {
+        toast.success("Friend request cancelled.");
+      }
+
+      setIsCancelOpen(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not cancel the request",
+      );
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleAccept = async (user: FriendUser) => {
@@ -357,6 +410,20 @@ export default function AddFriendScreen({ onBack }: AddFriendScreenProps) {
         </div>
       </div>
 
+      <ConfirmDialog
+        open={isCancelOpen}
+        title="Cancel friend request?"
+        description={
+          cancelTarget
+            ? `Your request to ${cancelTarget.name} (@${cancelTarget.username}) will be withdrawn. You can send a new request later.`
+            : ""
+        }
+        confirmLabel="Cancel Request"
+        cancelLabel="Keep Request"
+        isLoading={isCancelling}
+        onConfirm={handleConfirmCancel}
+        onClose={closeCancelDialog}
+      />
       <ConfirmDialog
         open={isRejectOpen}
         title="Reject friend request?"

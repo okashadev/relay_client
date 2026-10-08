@@ -15,6 +15,8 @@ import {
 } from "@/lib/notificationsApi";
 import { timeAgo } from "@/lib/time";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { FriendshipUpdatedPayload, NotificationNewPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
 
 function NotificationSkeleton() {
   return (
@@ -190,6 +192,41 @@ export default function NotificationsScreen() {
 
   const removeItem = (id: string) =>
     setItems((prev) => prev.filter((item) => item.id !== id));
+
+  useSocketEvent<NotificationNewPayload>(
+    SOCKET_EVENTS.NOTIFICATION_NEW,
+    (notification) => {
+      setItems((prev) =>
+        prev.some((item) => item.id === notification.id)
+          ? prev
+          : [notification, ...prev],
+      );
+
+      markAllNotificationsRead()
+        .then(() => refreshUnread())
+        .catch(() => {});
+    },
+  );
+
+  useSocketEvent<FriendshipUpdatedPayload>(
+  SOCKET_EVENTS.FRIENDSHIP_UPDATED,
+  ({ relationship, friendshipId }) => {
+    if (relationship === "NONE") {
+      // Bhejne wale ne request wapas le li
+      setItems((prev) =>
+        prev.filter((item) => item.friendship?.id !== friendshipId),
+      );
+    } else if (relationship === "FRIENDS") {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.friendship?.id === friendshipId
+            ? { ...item, friendship: { ...item.friendship, status: "ACCEPTED" } }
+            : item,
+        ),
+      );
+    }
+  },
+);
 
   const handleLoadMore = async () => {
     if (!nextCursor || isLoadingMore) return;
