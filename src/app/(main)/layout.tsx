@@ -6,6 +6,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import NotificationsSync from "@/components/notifications/NotificationsSync";
 import SocketProvider from "@/components/providers/SocketProvider";
 import RealtimeNotifications from "@/components/realtime/RealtimeNotifications";
+import ViewportHeightSync from "@/components/ViewportHeightSync";
 
 export default function MainLayout({
   children,
@@ -13,17 +14,19 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <AuthGuard>
-        <NotificationsSync />
-        <SocketProvider />
-        <RealtimeNotifications />
-        <div className="h-screen w-full flex bg-[#F7EAE0] overflow-hidden">
-          <AppSidebar />
+    <AuthGuard>
+      <NotificationsSync />
+      <SocketProvider />
+      <RealtimeNotifications />
+      <ViewportHeightSync />
 
-          <main className="flex-1 flex overflow-hidden">{children}</main>
-        </div>
-      </AuthGuard>
-    </>
+      <div className="app-height w-full flex flex-col md:flex-row bg-[#F7EAE0] overflow-hidden pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+        <AppSidebar />
+
+        <main className="flex-1 min-h-0 min-w-0 flex overflow-hidden">
+          {children}
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

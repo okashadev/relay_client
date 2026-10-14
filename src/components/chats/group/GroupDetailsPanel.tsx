@@ -1,64 +1,147 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { X, Users, UserPlus, VolumeX, LogOut, FileText, BarChart2, Image } from 'lucide-react';
+import { useMemo } from "react";
+import {
+  FileText,
+  Image as ImageIcon,
+  LogOut,
+  UserPlus,
+  Video,
+  VolumeX,
+  X,
+} from "lucide-react";
+import GroupAvatar from "@/components/common/GroupAvatar";
+import UserAvatar from "@/components/common/UserAvatar";
+import { timeAgo } from "@/lib/time";
+import type { ChatGroup, ParticipantRole, SharedMediaItem } from "@/types/chat";
 
-interface Member {
-  id: string;
-  name: string;
-  role?: string;
-  initials: string;
-  tag?: string;
-  status: 'online' | 'offline';
-  isYou?: boolean;
+interface GroupDetailsPanelProps {
+  group: ChatGroup;
+  meId: string;
+  sharedMedia: SharedMediaItem[];
+  onClose: () => void;
+  onAddMembers?: () => void;
+  onMute?: () => void;
+  onLeave?: () => void;
 }
 
-const members: Member[] = [
-  { id: '1', name: 'Marcus Brody', role: 'Sprint Leader', initials: 'MB', tag: 'Admin', status: 'online' },
-  { id: '2', name: 'Okasha Khan', role: 'Lead Architect', initials: 'OK', status: 'online' },
-  { id: '3', name: 'Sarah Jenkins', role: 'Design Lead', initials: 'SJ', status: 'online' },
-  { id: '4', name: 'Alex Morgan', role: 'Mobile Eng', initials: 'AM', status: 'online', isYou: true },
-  { id: '5', name: 'David Chen', role: 'DevOps • 2h ago', initials: 'DC', status: 'offline' },
-];
+const ROLE_RANK: Record<ParticipantRole, number> = {
+  OWNER: 0,
+  ADMIN: 1,
+  MEMBER: 2,
+};
 
-export default function GroupDetailsPanel({ onClose }: { onClose: () => void }) {
+const ROLE_LABEL: Partial<Record<ParticipantRole, string>> = {
+  OWNER: "Owner",
+  ADMIN: "Admin",
+};
+
+const mediaIcon = (type: SharedMediaItem["type"]) =>
+  type === "IMAGE" ? ImageIcon : type === "VIDEO" ? Video : FileText;
+
+export default function GroupDetailsPanel({
+  group,
+  meId,
+  sharedMedia,
+  onClose,
+  onAddMembers,
+  onMute,
+  onLeave,
+}: GroupDetailsPanelProps) {
+  const canManageMembers = group.myRole === "OWNER" || group.myRole === "ADMIN";
+
+  // Owner aur admins pehle, phir online, phir naam
+  const members = useMemo(
+    () =>
+      [...group.members].sort(
+        (a, b) =>
+          ROLE_RANK[a.role] - ROLE_RANK[b.role] ||
+          Number(b.user.status === "ONLINE") -
+            Number(a.user.status === "ONLINE") ||
+          a.user.name.localeCompare(b.user.name),
+      ),
+    [group.members],
+  );
+
+  const onlineCount = group.members.filter(
+    (member) => member.user.status === "ONLINE",
+  ).length;
+
+  const createdDate = new Date(group.createdAt).toLocaleDateString([], {
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <div className="w-80 h-full bg-[#F7EAE0] border-l border-[#1D4533]/10 flex flex-col select-none overflow-y-auto shrink-0">
+    <div className="w-full md:w-80 h-full bg-[#F7EAE0] md:border-l border-[#1D4533]/10 flex flex-col overflow-y-auto overscroll-contain shrink-0 shadow-lg">
       {/* Header */}
-      <div className="p-4 border-b border-[#1D4533]/10 flex items-center justify-between">
+      <div className="px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] border-b border-[#1D4533]/10 flex items-center justify-between bg-[#F7EAE0]/90 backdrop-blur-md sticky top-0 z-10">
         <h2 className="text-xs font-bold text-[#1D4533]">Group Details</h2>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-[#1D4533]/10 text-[#1D4533] transition-colors">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close group details"
+          className="w-9 h-9 rounded-lg hover:bg-[#1D4533]/10 text-[#1D4533] flex items-center justify-center transition-colors cursor-pointer"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Group Summary Card */}
+      {/* Group Summary */}
       <div className="p-6 flex flex-col items-center text-center border-b border-[#1D4533]/10">
-        <div className="w-16 h-16 rounded-2xl bg-[#1D4533] text-[#F9D2BA] flex items-center justify-center text-2xl font-bold shadow-md mb-3">
-          <Users className="w-8 h-8" />
-        </div>
-        <h3 className="text-sm font-bold text-[#1D4533]">Product Sprint Team</h3>
-        <p className="text-[10px] text-[#5E3122]/60 font-medium">Created by Marcus • Aug 2024</p>
+        <GroupAvatar
+          name={group.name}
+          avatar={group.avatar}
+          className="w-16 h-16 rounded-2xl mb-3"
+          iconClassName="w-8 h-8"
+        />
+        <h3 className="text-sm font-bold text-[#1D4533] max-w-full truncate">
+          {group.name}
+        </h3>
+        <p className="text-[10px] text-[#5E3122]/60 font-medium max-w-full truncate">
+          {group.createdBy
+            ? `Created by ${group.createdBy.name} • ${createdDate}`
+            : `Created ${createdDate}`}
+        </p>
 
-        {/* About Box */}
         <div className="mt-4 p-3 bg-white/70 border border-[#1D4533]/10 rounded-xl text-left w-full">
-          <p className="text-[9px] font-bold text-[#1D4533] uppercase tracking-wider mb-1">About</p>
-          <p className="text-[10px] text-[#5E3122]/80 leading-relaxed font-medium">
-            Official team collaboration group for synchronous cluster operations and project planning.
+          <p className="text-[9px] font-bold text-[#1D4533] uppercase tracking-wider mb-1">
+            About
+          </p>
+          <p className="text-[10px] text-[#5E3122]/80 leading-relaxed font-medium [overflow-wrap:anywhere]">
+            {group.description || "No description yet."}
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-2 w-full mt-4">
-          <button className="flex flex-col items-center justify-center p-2 rounded-xl bg-[#1D4533] text-[#F9D2BA] hover:bg-[#1D4533]/90 transition-colors">
-            <UserPlus className="w-4 h-4 mb-1" />
-            <span className="text-[9px] font-bold">Add</span>
-          </button>
-          <button className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533]/5 transition-colors">
+        {/* Actions: Add sirf owner aur admins ko */}
+        <div
+          className={`grid gap-2 w-full mt-4 ${
+            canManageMembers ? "grid-cols-3" : "grid-cols-2"
+          }`}
+        >
+          {canManageMembers && (
+            <button
+              type="button"
+              onClick={onAddMembers}
+              className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-[#1D4533] text-[#F9D2BA] hover:bg-[#1D4533]/90 transition-colors cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4 mb-1" />
+              <span className="text-[9px] font-bold">Add</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onMute}
+            className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white border border-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533]/5 transition-colors cursor-pointer"
+          >
             <VolumeX className="w-4 h-4 mb-1" />
             <span className="text-[9px] font-bold">Mute</span>
           </button>
-          <button className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-[#1D4533]/10 text-red-600 hover:bg-red-50 transition-colors">
+          <button
+            type="button"
+            onClick={onLeave}
+            className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white border border-[#1D4533]/10 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+          >
             <LogOut className="w-4 h-4 mb-1" />
             <span className="text-[9px] font-bold">Leave</span>
           </button>
@@ -66,66 +149,100 @@ export default function GroupDetailsPanel({ onClose }: { onClose: () => void }) 
       </div>
 
       {/* Shared Media */}
-      <div className="p-4 border-b border-[#1D4533]/10">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-bold text-[#1D4533] tracking-wide">SHARED MEDIA (24)</span>
-          <button className="text-[9px] font-bold text-[#5E3122]/60 hover:text-[#1D4533]">View All</button>
-        </div>
+      {sharedMedia.length > 0 && (
+        <div className="p-4 border-b border-[#1D4533]/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-bold text-[#1D4533] tracking-wide uppercase">
+              Shared media ({sharedMedia.length})
+            </span>
+            {/* TODO: poori media ki list */}
+            <button
+              type="button"
+              className="text-[9px] font-bold text-[#5E3122]/60 hover:text-[#1D4533] cursor-pointer"
+            >
+              View all
+            </button>
+          </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <div className="h-16 rounded-xl bg-white border border-[#1D4533]/10 flex flex-col items-center justify-center p-2 cursor-pointer hover:border-[#1D4533] transition-colors">
-            <BarChart2 className="w-5 h-5 text-[#1D4533]" />
-            <span className="text-[8px] font-medium text-[#5E3122] truncate w-full text-center mt-1">topology.svg</span>
-          </div>
-          <div className="h-16 rounded-xl bg-white border border-[#1D4533]/10 flex flex-col items-center justify-center p-2 cursor-pointer hover:border-[#1D4533] transition-colors">
-            <FileText className="w-5 h-5 text-[#1D4533]" />
-            <span className="text-[8px] font-medium text-[#5E3122] truncate w-full text-center mt-1">benchmarks....</span>
-          </div>
-          <div className="h-16 rounded-xl bg-white border border-[#1D4533]/10 flex flex-col items-center justify-center p-2 cursor-pointer hover:border-[#1D4533] transition-colors">
-            <Image className="w-5 h-5 text-[#1D4533]" />
-            <span className="text-[8px] font-medium text-[#5E3122] truncate w-full text-center mt-1">wireframe.png</span>
+          <div className="grid grid-cols-3 gap-2">
+            {sharedMedia.slice(0, 3).map((item) => {
+              const Icon = mediaIcon(item.type);
+              return (
+                <div
+                  key={item.id}
+                  className="h-16 rounded-xl bg-white border border-[#1D4533]/10 flex flex-col items-center justify-center p-2"
+                >
+                  <Icon className="w-5 h-5 text-[#1D4533]" />
+                  <span className="text-[8px] font-medium text-[#5E3122] truncate w-full text-center mt-1">
+                    {item.fileName ?? item.type.toLowerCase()}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Members Section */}
+      {/* Members */}
       <div className="p-4 flex-1">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-bold text-[#1D4533] tracking-wide">GROUP MEMBERS (12)</span>
-          <span className="text-[9px] font-bold text-emerald-600">4 online</span>
+          <span className="text-[10px] font-bold text-[#1D4533] tracking-wide uppercase">
+            Members ({group.members.length})
+          </span>
+          <span className="text-[9px] font-bold text-emerald-600">
+            {onlineCount} online
+          </span>
         </div>
 
-        <div className="space-y-2">
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/50 transition-colors">
-              <div className="flex items-center gap-2.5">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-xl bg-[#1D4533] text-[#F9D2BA] font-bold text-[10px] flex items-center justify-center">
-                    {member.initials}
-                  </div>
-                  <span
-                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#F7EAE0] ${
-                      member.status === 'online' ? 'bg-emerald-500' : 'bg-gray-400'
-                    }`}
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs font-bold text-[#1D4533]">{member.name}</p>
-                    {member.isYou && <span className="text-[9px] font-medium text-[#5E3122]/50">(You)</span>}
-                  </div>
-                  <p className="text-[9px] text-[#5E3122]/60 font-medium">{member.role}</p>
-                </div>
-              </div>
+        <ul className="space-y-1">
+          {members.map(({ user, role }) => {
+            const isOnline = user.status === "ONLINE";
+            const roleLabel = ROLE_LABEL[role];
 
-              {member.tag && (
-                <span className="px-2 py-0.5 rounded-md bg-[#1D4533] text-[#F9D2BA] text-[8px] font-bold">
-                  {member.tag}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+            return (
+              <li
+                key={user.id}
+                className="flex items-center justify-between gap-2 p-1.5 rounded-xl hover:bg-white/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative shrink-0">
+                    <UserAvatar
+                      name={user.name}
+                      avatar={user.avatar}
+                      className="w-8 h-8 rounded-xl"
+                      textClassName="text-[10px]"
+                    />
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#F7EAE0] ${
+                        isOnline ? "bg-emerald-500" : "bg-[#1D4533]/30"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#1D4533] truncate">
+                      {user.name}
+                      {user.id === meId && (
+                        <span className="ml-1 text-[9px] font-medium text-[#5E3122]/50">
+                          (You)
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[9px] text-[#5E3122]/60 font-medium truncate">
+                      @{user.username}
+                      {!isOnline && ` • ${timeAgo(user.lastSeen)}`}
+                    </p>
+                  </div>
+                </div>
+
+                {roleLabel && (
+                  <span className="px-2 py-0.5 rounded-md bg-[#1D4533] text-[#F9D2BA] text-[8px] font-bold shrink-0">
+                    {roleLabel}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

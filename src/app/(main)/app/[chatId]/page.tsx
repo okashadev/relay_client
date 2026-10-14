@@ -1,93 +1,110 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import DirectChat from "@/components/chats/direct/DirectChat";
-import { useState } from "react";
 import GroupChatView from "@/components/chats/group/GroupChatView";
-import GroupDetailsPanel from "@/components/chats/group/GroupDetailsPanel";
+import { useConversation } from "@/hooks/useConversation";
+import { useConversationMessages } from "@/hooks/useConversationMessages";
+import { useChatListStore } from "@/store/chatListStore";
+import { useEffect } from "react";
+import { markConversationRead } from "@/lib/ChatApi";
 
-const mockChats = [
-  {
-    id: "9345678h68307s2a",
-    name: "Okasha Khan",
-    avatarText: "OK",
-    preview: "Let's deploy the end-to-end sync upda...",
-    ConversationType: "DIRECT",
-    time: "10:42 AM",
-    isOnline: true,
-  },
-  {
-    id: "b48210f83c1294ea",
-    name: "Sarah Jenkins",
-    avatarText: "SJ",
-    preview: "The design specs for Relay look gor...",
-    ConversationType: "DIRECT",
-    time: "09:15 AM",
-    unreadCount: 2,
-    isOnline: true,
-  },
-  {
-    id: "b48218f83c1294ea",
-    name: "webdevTeam",
-    avatarText: "WD",
-    preview: "Marcus: Pushed the socket gatewa...",
-    ConversationType: "GROUP",
-    time: "Yesterday",
-    unreadCount: 5,
-  },
-  {
-    id: "c28210j82c1294ea",
-    name: "mobileDevTeam",
-    avatarText: "MD",
-    preview: "alex: Pushed the socket gatewa...",
-    ConversationType: "GROUP",
-    time: "Yesterday",
-    unreadCount: 3,
-  },
-  {
-    id: "s28210w82e1294ur",
-    name: "Elena Rostova",
-    avatarText: "ER",
-    preview: "Sent you the telemetry benchmark report.",
-    ConversationType: "DIRECT",
-    time: "Aug 28",
-    isOnline: true,
-  },
-  {
-    id: "z28210q82k1294ig",
-    name: "David Chen",
-    avatarText: "DC",
-    preview: "Thanks! Have a great weekend.",
-    ConversationType: "DIRECT",
-    time: "Aug 26",
-    isOnline: false,
-  },
-];
+function ChatStatusScreen({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex-1 min-w-0 h-full flex flex-col items-center justify-center gap-4 p-8 text-center bg-[#F7EAE0]">
+      <h2 className="text-xl font-extrabold text-[#1D4533] tracking-tight">
+        {title}
+      </h2>
+      <p className="text-xs text-[#5E3122]/70 font-medium max-w-xs">
+        {description}
+      </p>
+      <div className="flex items-center gap-2.5">
+        {children}
+        <Link
+          href="/app"
+          className="px-4 py-2.5 bg-white border border-[#1D4533]/15 text-[#1D4533] rounded-2xl shadow-sm text-xs font-bold hover:bg-[#1D4533]/5 transition-all"
+        >
+          Back to conversations
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ChatScreen({ chatId }: { chatId: string }) {
+  const details = useConversation(chatId);
+  const messagesState = useConversationMessages(chatId);
+
+  const markRead = useChatListStore((state) => state.markRead);
+
+  useEffect(() => {
+    if (messagesState.status !== "ready") return;
+
+    markRead(chatId);
+    markConversationRead(chatId).catch(() => {});
+  }, [chatId, messagesState.status, markRead]);
+
+  if (details.status === "loading") {
+    return (
+      <div className="flex-1 min-w-0 h-full flex flex-col items-center justify-center gap-4 bg-[#F7EAE0]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#1D4533]" />
+        <Link
+          href="/app"
+          className="md:hidden text-xs font-bold text-[#1D4533] underline"
+        >
+          Back to conversations
+        </Link>
+      </div>
+    );
+  }
+
+  if (details.status === "not-found") {
+    return (
+      <ChatStatusScreen
+        title="Conversation not found"
+        description="This conversation doesn't exist or you no longer have access to it."
+      />
+    );
+  }
+
+  if (details.status === "error" || !details.conversation) {
+    return (
+      <ChatStatusScreen
+        title="Couldn't open this chat"
+        description="Something went wrong while loading the conversation."
+      >
+        <button
+          type="button"
+          onClick={details.reload}
+          className="px-4 py-2.5 bg-[#1D4533] text-[#F7EAE0] rounded-2xl shadow-md text-xs font-bold hover:bg-[#1D4533]/90 transition-all cursor-pointer"
+        >
+          Try again
+        </button>
+      </ChatStatusScreen>
+    );
+  }
+
+  const { conversation } = details;
+
+  return conversation.type === "GROUP" ? (
+    <GroupChatView conversation={conversation} messagesState={messagesState} />
+  ) : (
+    <DirectChat conversation={conversation} messagesState={messagesState} />
+  );
+}
 
 export default function ActiveChatPage() {
-  const params = useParams();
-  const chatId = params.chatId as string;
-  const [showDetails, setShowDetails] = useState(false);
+  const { chatId } = useParams<{ chatId: string }>();
 
-  const activeChat = mockChats.find((chat) => chat.id === chatId);
-  const isGroup = activeChat?.ConversationType === "GROUP";
-
-  return (
-    <>
-      <div className="w-full h-full flex overflow-hidden">
-        {isGroup ? (
-          <div className="flex-1 flex h-full overflow-hidden">
-            <GroupChatView
-              groupId={chatId}
-              onToggleDetails={() => setShowDetails(!showDetails)}
-            />
-          </div>
-        ) : (
-          <div className="hidden md:flex flex-1 h-full overflow-hidden">
-            <DirectChat chatId={chatId} />
-          </div>
-        )}
-      </div>
-    </>
-  );
+  return <ChatScreen key={chatId} chatId={chatId} />;
 }

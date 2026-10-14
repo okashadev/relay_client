@@ -1,4 +1,3 @@
-import { apiFetch } from "./api";
 import { apiRequest } from "./apiRequest";
 
 export type Relationship =

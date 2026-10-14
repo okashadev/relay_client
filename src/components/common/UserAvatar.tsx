@@ -14,10 +14,12 @@ export default function UserAvatar({
   name,
   avatar,
   className = "w-12 h-12 rounded-2xl",
+  textClassName = "text-sm",
 }: {
   name: string;
   avatar: string | null;
   className?: string;
+  textClassName?: string;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -35,7 +37,8 @@ export default function UserAvatar({
 
   return (
     <div
-      className={`${className} bg-[#1D4533] text-[#F7EAE0] flex items-center justify-center font-bold text-sm shadow shrink-0`}
+      aria-hidden="true"
+      className={`${className} ${textClassName} bg-[#1D4533] text-[#F9D2BA] flex items-center justify-center font-bold shadow shrink-0`}
     >
       {getInitials(name)}
     </div>

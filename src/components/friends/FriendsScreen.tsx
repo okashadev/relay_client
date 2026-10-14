@@ -9,6 +9,7 @@ import {
   MessageSquare,
   MoreVertical,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import AddFriendScreen from "./AddFriendScreen";
 import Link from "next/link";
@@ -17,6 +18,9 @@ import { fetchFriends, FriendUser } from "@/lib/friendsApi";
 import UserAvatar from "../common/UserAvatar";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
+import { newChat } from "@/lib/ChatApi";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 function FriendSkeleton() {
   return (
@@ -42,6 +46,9 @@ export default function FriendsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [isOpenChatLoading, setIsOpenChatLoading] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -64,6 +71,26 @@ export default function FriendsScreen() {
 
     return () => controller.abort();
   }, [reloadKey]);
+
+  const openChat = async (otherUserId: string) => {
+    if (!otherUserId) return;
+    setIsOpenChatLoading(true);
+    setOpeningId(otherUserId);
+    try {
+      const { success, conversation } = await newChat(otherUserId);
+      const conversationId = conversation?.id;
+      if (success) {
+        router.push(`/app/${conversationId}`);
+      }
+    } catch (err: any) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not open the chat",
+      );
+      setOpeningId(null);
+    } finally {
+      setIsOpenChatLoading(false);
+    }
+  };
 
   useSocketEvent<FriendshipUpdatedPayload>(
     SOCKET_EVENTS.FRIENDSHIP_UPDATED,
@@ -231,14 +258,19 @@ export default function FriendsScreen() {
                   {friend.bio || "No bio yet"}
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {/* TODO: chat banne ke baad yahan se conversation khulegi */}
                   <button
                     type="button"
-                    className="p-2 rounded-xl bg-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0] transition-all cursor-pointer"
+                    onClick={() => openChat(friend.id)}
+                    disabled={isOpenChatLoading}
+                    className="p-2 rounded-xl bg-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Message"
                     aria-label={`Message ${friend.name}`}
                   >
-                    <MessageSquare size={14} />
+                    {openingId === friend.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <MessageSquare size={14} />
+                    )}
                   </button>
                 </div>
               </div>

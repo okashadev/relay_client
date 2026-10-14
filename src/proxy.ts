@@ -25,15 +25,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (
-    authRoutes.includes(pathname) &&
-    hasSession &&
-    !searchParams.has("redirect")
-  ) {
-    const appUrl = request.nextUrl.clone();
-    appUrl.pathname = "/app";
-    appUrl.search = "";
-    return NextResponse.redirect(appUrl);
+  if (authRoutes.includes(pathname) && hasSession) {
+    const redirectTo = searchParams.get("redirect");
+
+    const isValidRedirect =
+      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//");
+
+    const targetUrl = request.nextUrl.clone();
+    targetUrl.pathname = isValidRedirect ? redirectTo : "/app";
+    targetUrl.search = "";
+
+    return NextResponse.redirect(targetUrl);
   }
 
   return NextResponse.next();
