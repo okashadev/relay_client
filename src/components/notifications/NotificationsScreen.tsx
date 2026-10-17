@@ -6,17 +6,21 @@ import { ArrowLeft, Bell, Check, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import UserAvatar from "@/components/common/UserAvatar";
-import { ApiError } from "@/lib/apiRequest";
-import { acceptFriendRequest, rejectFriendRequest } from "@/lib/friendsApi";
+import { ApiError } from "@/lib/api/apiRequest";
+import { acceptFriendRequest, rejectFriendRequest } from "@/lib/api/friendsApi";
 import {
   fetchNotifications,
   markAllNotificationsRead,
   type NotificationItem,
-} from "@/lib/notificationsApi";
+} from "@/lib/api/notificationsApi";
 import { timeAgo } from "@/lib/time";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { FriendshipUpdatedPayload, NotificationNewPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
+import {
+  FriendshipUpdatedPayload,
+  NotificationNewPayload,
+  SOCKET_EVENTS,
+} from "@/lib/socket/socketEvents";
 
 function NotificationSkeleton() {
   return (
@@ -209,24 +213,27 @@ export default function NotificationsScreen() {
   );
 
   useSocketEvent<FriendshipUpdatedPayload>(
-  SOCKET_EVENTS.FRIENDSHIP_UPDATED,
-  ({ relationship, friendshipId }) => {
-    if (relationship === "NONE") {
-      // Bhejne wale ne request wapas le li
-      setItems((prev) =>
-        prev.filter((item) => item.friendship?.id !== friendshipId),
-      );
-    } else if (relationship === "FRIENDS") {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.friendship?.id === friendshipId
-            ? { ...item, friendship: { ...item.friendship, status: "ACCEPTED" } }
-            : item,
-        ),
-      );
-    }
-  },
-);
+    SOCKET_EVENTS.FRIENDSHIP_UPDATED,
+    ({ relationship, friendshipId }) => {
+      if (relationship === "NONE") {
+        // Bhejne wale ne request wapas le li
+        setItems((prev) =>
+          prev.filter((item) => item.friendship?.id !== friendshipId),
+        );
+      } else if (relationship === "FRIENDS") {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.friendship?.id === friendshipId
+              ? {
+                  ...item,
+                  friendship: { ...item.friendship, status: "ACCEPTED" },
+                }
+              : item,
+          ),
+        );
+      }
+    },
+  );
 
   const handleLoadMore = async () => {
     if (!nextCursor || isLoadingMore) return;

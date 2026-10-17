@@ -1,4 +1,4 @@
-import { apiRequest } from "./apiRequest";
+import { apiRequest } from "@/lib/api/apiRequest";
 
 export type Relationship =
   | "NONE"
@@ -74,7 +74,9 @@ export const rejectFriendRequest = (friendshipId: string) =>
     { method: "POST" },
   );
 
-export const fetchFriends = async (signal?: AbortSignal): Promise<FriendUser[]> => {
+export const fetchFriends = async (
+  signal?: AbortSignal,
+): Promise<FriendUser[]> => {
   const data = await apiRequest<{ friends: FriendUser[] }>("/api/friends", {
     signal,
   });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "@/lib/apiRequest";
-import { getConversation } from "@/lib/ChatApi";
+import { ApiError } from "@/lib/api/apiRequest";
+import { getConversation } from "@/lib/api/ChatApi";
 import type { ConversationDetails } from "@/types/chat";
 
 type DetailsStatus = "loading" | "ready" | "not-found" | "error";

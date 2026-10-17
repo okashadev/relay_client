@@ -9,7 +9,7 @@ import { useConversation } from "@/hooks/useConversation";
 import { useConversationMessages } from "@/hooks/useConversationMessages";
 import { useChatListStore } from "@/store/chatListStore";
 import { useEffect } from "react";
-import { markConversationRead } from "@/lib/ChatApi";
+import { markConversationRead } from "@/lib/api/ChatApi";
 
 function ChatStatusScreen({
   title,

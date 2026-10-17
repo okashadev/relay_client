@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { io, type Socket } from "socket.io-client";
-import { refreshSession } from "./api";
+import { refreshSession } from "../api/api";
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:5000";

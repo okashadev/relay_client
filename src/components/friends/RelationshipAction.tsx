@@ -1,7 +1,5 @@
-import { type Relationship } from "@/lib/friendsApi";
+import { type Relationship } from "@/lib/api/friendsApi";
 import { Check, Loader2, MessageCircle, UserCheck, UserPlus, X } from "lucide-react";
-
-type FriendStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
 
 export default function RelationshipAction({
   relationship,

@@ -7,6 +7,7 @@ export function useStickToBottom<T extends HTMLElement>(
   forceKey?: unknown,
 ) {
   const scrollRef = useRef<T>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const forceRef = useRef(forceKey);
   const snapshotRef = useRef<{ height: number; top: number } | null>(null);
@@ -51,8 +52,10 @@ export function useStickToBottom<T extends HTMLElement>(
     });
 
     observer.observe(el);
+    if (contentRef.current) observer.observe(contentRef.current);
+
     return () => observer.disconnect();
   }, []);
 
-  return { scrollRef, onScroll, capturePosition };
+  return { scrollRef, contentRef, onScroll, capturePosition };
 }

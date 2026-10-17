@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fetchUnreadCount } from "@/lib/notificationsApi";
+import { fetchUnreadCount } from "@/lib/api/notificationsApi";
 
 type NotificationState = {
   unreadCount: number;

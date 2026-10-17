@@ -1,11 +1,11 @@
 "use client";
 
-import { getSocket } from "@/lib/socket";
+import { getSocket } from "@/lib/socket/socket";
 import { useEffect, useRef } from "react";
 
 export function useSocketEvent<T>(
   event: string,
-  handler: (payload: T) => void,
+  handler: (payload: T, ack?: () => void) => void,
 ) {
   const handlerRef = useRef(handler);
 
@@ -15,7 +15,8 @@ export function useSocketEvent<T>(
 
   useEffect(() => {
     const socket = getSocket();
-    const listener = (payload: T) => handlerRef.current(payload);
+    const listener = (payload: T, ack?: () => void) =>
+      handlerRef.current(payload, typeof ack === "function" ? ack : undefined);
 
     socket.on(event, listener);
 

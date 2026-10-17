@@ -63,3 +63,12 @@ export const formatFileSize = (bytes: number | null | undefined) => {
 
   return `${size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`;
 };
+
+export const formatDuration = (totalSeconds: number) => {
+  const safe =
+    Number.isFinite(totalSeconds) && totalSeconds > 0
+      ? Math.floor(totalSeconds)
+      : 0;
+
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
+};

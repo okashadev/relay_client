@@ -12,14 +12,14 @@ import {
   searchUsers,
   sendFriendRequest,
   type FriendUser,
-} from "@/lib/friendsApi";
+} from "@/lib/api/friendsApi";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import UserAvatar from "../common/UserAvatar";
 import RelationshipAction from "./RelationshipAction";
 import { useNotificationStore } from "@/store/notificationStore";
-import { ApiError } from "@/lib/apiRequest";
+import { ApiError } from "@/lib/api/apiRequest";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
+import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socket/socketEvents";
 
 function UserSkeleton() {
   return (

@@ -12,10 +12,10 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
-import { fetchFriends, FriendUser } from "@/lib/friendsApi";
+import { fetchFriends, FriendUser } from "@/lib/api/friendsApi";
 import { useRouter } from "next/navigation";
 import UserAvatar from "../common/UserAvatar";
-import { newChat } from "@/lib/ChatApi";
+import { newChat } from "@/lib/api/ChatApi";
 import { toast } from "sonner";
 
 export default function NewChatDropdownButton() {

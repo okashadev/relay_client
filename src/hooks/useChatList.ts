@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getConversations } from "@/lib/ChatApi";
+import { getConversations } from "@/lib/api/ChatApi";
 import { useChatListStore } from "@/store/chatListStore";
 
 const STALE_AFTER_MS = 30_000;
@@ -10,6 +10,8 @@ export function useChatList() {
   const chats = useChatListStore((state) => state.chats);
   const setChats = useChatListStore((state) => state.setChats);
   const [error, setError] = useState<string | null>(null);
+  const version = useChatListStore((state) => state.version);
+  const seenVersion = useRef(useChatListStore.getState().version);
 
   const controllerRef = useRef<AbortController | null>(null);
   const lastFetchedAt = useRef(0);
@@ -30,6 +32,12 @@ export function useChatList() {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     }
   }, [setChats]);
+
+  useEffect(() => {
+    if (version === seenVersion.current) return;
+    seenVersion.current = version;
+    load();
+  }, [version, load]);
 
   useEffect(() => {
     load();

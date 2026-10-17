@@ -3,7 +3,7 @@ import {
   FriendshipUpdatedPayload,
   NotificationNewPayload,
   SOCKET_EVENTS,
-} from "@/lib/socketEvents";
+} from "@/lib/socket/socketEvents";
 import { useNotificationStore } from "@/store/notificationStore";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";

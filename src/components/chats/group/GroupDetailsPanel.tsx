@@ -50,7 +50,6 @@ export default function GroupDetailsPanel({
 }: GroupDetailsPanelProps) {
   const canManageMembers = group.myRole === "OWNER" || group.myRole === "ADMIN";
 
-  // Owner aur admins pehle, phir online, phir naam
   const members = useMemo(
     () =>
       [...group.members].sort(
@@ -108,7 +107,7 @@ export default function GroupDetailsPanel({
           <p className="text-[9px] font-bold text-[#1D4533] uppercase tracking-wider mb-1">
             About
           </p>
-          <p className="text-[10px] text-[#5E3122]/80 leading-relaxed font-medium [overflow-wrap:anywhere]">
+          <p className="text-[10px] text-[#5E3122]/80 leading-relaxed font-medium wrap-anywhere">
             {group.description || "No description yet."}
           </p>
         </div>
@@ -229,7 +228,9 @@ export default function GroupDetailsPanel({
                     </p>
                     <p className="text-[9px] text-[#5E3122]/60 font-medium truncate">
                       @{user.username}
-                      {!isOnline && ` • ${timeAgo(user.lastSeen)}`}
+                      {!isOnline &&
+                        user.lastSeen &&
+                        ` • ${timeAgo(user.lastSeen)}`}
                     </p>
                   </div>
                 </div>

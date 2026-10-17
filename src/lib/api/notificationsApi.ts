@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/apiRequest";
+import { apiRequest } from "@/lib/api/apiRequest";
 
 export type NotificationType = "FRIEND_REQUEST" | "FRIEND_ACCEPTED";
 

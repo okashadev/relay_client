@@ -49,6 +49,23 @@ export type ChatPreview = {
   isArchived: boolean;
 };
 
+export type ReactionSummary = {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+};
+
+export type Receipts = {
+  deliveredUpTo: string | null;
+  readUpTo: string | null;
+};
+
+export type EditDraft = {
+  id: string;
+  type: MessageType;
+  content: string;
+};
+
 export type ChatMessage = {
   id: string;
   clientId: string | null;
@@ -61,15 +78,31 @@ export type ChatMessage = {
   mediaSize: number | null;
   mediaWidth: number | null;
   mediaHeight: number | null;
+  thumbnailUrl: string | null;
+  mediaMimeType: string | null;
+  mediaDuration: number | null;
   replyTo: {
     id: string;
     content: string | null;
     senderName: string | null;
+    type: MessageType;
+    fileName: string | null;
+    deleted?: boolean;
   } | null;
+  reactions: ReactionSummary[];
   editedAt: string | null;
   deletedAt: string | null;
   createdAt: string;
-  status?: "sending" | "failed";
+  status?: "uploading" | "sending" | "failed";
+  uploadProgress?: number;
+};
+
+export type ReplyDraft = {
+  id: string;
+  senderName: string;
+  type: MessageType;
+  content: string | null;
+  fileName: string | null;
 };
 
 export type GroupMemberItem = {
@@ -108,11 +141,13 @@ export type DirectConversationDetails = {
   createdAt: string;
   otherUser: ChatUser;
   me: ConversationMeState;
+  receipts: Receipts;
 };
 
 export type GroupConversationDetails = ChatGroup & {
   type: "GROUP";
   me: ConversationMeState;
+  receipts: Receipts;
 };
 
 export type ConversationDetails =

@@ -14,11 +14,11 @@ import {
 import AddFriendScreen from "./AddFriendScreen";
 import Link from "next/link";
 import NotificationBadge from "@/components/notifications/NotificationBadge";
-import { fetchFriends, FriendUser } from "@/lib/friendsApi";
+import { fetchFriends, FriendUser } from "@/lib/api/friendsApi";
 import UserAvatar from "../common/UserAvatar";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socketEvents";
-import { newChat } from "@/lib/ChatApi";
+import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socket/socketEvents";
+import { newChat } from "@/lib/api/ChatApi";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 

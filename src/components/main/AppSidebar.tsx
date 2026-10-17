@@ -5,7 +5,7 @@ import { MessageSquare, Settings, UserPlus, Bell } from "lucide-react";
 import { MdWebStories } from "react-icons/md";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logoutUser } from "@/lib/api";
+import { logoutUser } from "@/lib/api/api";
 import { useAuthStore } from "@/store/authStore";
 import NotificationBadge from "@/components/notifications/NotificationBadge";
 import UserAvatar from "@/components/common/UserAvatar";

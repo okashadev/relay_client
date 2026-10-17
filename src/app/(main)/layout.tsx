@@ -7,6 +7,7 @@ import NotificationsSync from "@/components/notifications/NotificationsSync";
 import SocketProvider from "@/components/providers/SocketProvider";
 import RealtimeNotifications from "@/components/realtime/RealtimeNotifications";
 import ViewportHeightSync from "@/components/ViewportHeightSync";
+import RealtimeMessages from "@/components/realtime/RealtimeMessages";
 
 export default function MainLayout({
   children,
@@ -18,6 +19,7 @@ export default function MainLayout({
       <NotificationsSync />
       <SocketProvider />
       <RealtimeNotifications />
+      <RealtimeMessages />
       <ViewportHeightSync />
 
       <div className="app-height w-full flex flex-col md:flex-row bg-[#F7EAE0] overflow-hidden pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
