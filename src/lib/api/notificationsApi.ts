@@ -1,10 +1,18 @@
 import { apiRequest } from "@/lib/api/apiRequest";
 
-export type NotificationType = "FRIEND_REQUEST" | "FRIEND_ACCEPTED";
+export type NotificationType =
+  | "SYSTEM"
+  | "FRIEND_REQUEST"
+  | "FRIEND_ACCEPTED"
+  | "GROUP_ADDED";
 
 export type NotificationItem = {
   id: string;
+  userId: string;
+  actorId: string;
   type: NotificationType | (string & {});
+  friendshipId: string | null;
+  conversationId: string | null;
   isRead: boolean;
   createdAt: string;
   actor: {
@@ -13,9 +21,13 @@ export type NotificationItem = {
     username: string;
     avatar: string | null;
   };
-  friendship: {
+  friendship?: {
     id: string;
     status: "PENDING" | "ACCEPTED" | "BLOCKED";
+  } | null;
+  conversation?: {
+    id: string;
+    name: string | null;
   } | null;
 };
 

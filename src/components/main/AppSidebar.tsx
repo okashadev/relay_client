@@ -9,6 +9,7 @@ import { logoutUser } from "@/lib/api/api";
 import { useAuthStore } from "@/store/authStore";
 import NotificationBadge from "@/components/notifications/NotificationBadge";
 import UserAvatar from "@/components/common/UserAvatar";
+import { useChatList } from "@/hooks/useChatList";
 
 const navItems = [
   { id: "Chats", icon: MessageSquare, label: "Chats", href: "/app" },
@@ -27,9 +28,14 @@ const isActivePath = (pathname: string, href: string) =>
 
 export default function AppSidebar() {
   const pathname = usePathname() ?? "";
+  const { chats } = useChatList();
   const user = useAuthStore((state) => state.user);
 
   const isChatOpen = /^\/app\/[^/]+/.test(pathname);
+
+  const unreadConversations = (chats ?? []).filter(
+    (chat) => !chat.isArchived && chat.unreadCount > 0,
+  ).length;
 
   return (
     <aside
@@ -68,6 +74,14 @@ export default function AppSidebar() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
+                {item.id === "Chats" && unreadConversations > 0 && (
+                  <span
+                    aria-label={`${unreadConversations} unread conversations`}
+                    className="absolute -top-1 -right-1 z-10 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-[#F7EAE0]"
+                  >
+                    {unreadConversations > 99 ? "99+" : unreadConversations}
+                  </span>
+                )}
                 {item.id === "Notifications" && (
                   <NotificationBadge className="absolute -top-1 -right-1 z-10 border-2 border-[#F7EAE0]" />
                 )}
@@ -85,7 +99,6 @@ export default function AppSidebar() {
       </div>
 
       <div className="flex items-center gap-1 md:flex-col md:gap-4">
-
         <div className="relative">
           <button
             type="button"

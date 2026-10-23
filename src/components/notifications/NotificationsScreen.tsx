@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bell, Check, Loader2, RefreshCw, X } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Loader2,
+  Users,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import UserAvatar from "@/components/common/UserAvatar";
@@ -21,6 +28,7 @@ import {
   NotificationNewPayload,
   SOCKET_EVENTS,
 } from "@/lib/socket/socketEvents";
+import Link from "next/link";
 
 function NotificationSkeleton() {
   return (
@@ -45,7 +53,7 @@ function NotificationCard({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { actor, type, friendship } = notification;
+  const { actor, type, friendship, conversation } = notification;
 
   let message: React.ReactNode;
 
@@ -63,6 +71,14 @@ function NotificationCard({
         <>
           <span className="font-bold">{actor.name}</span> accepted your friend
           request
+        </>
+      );
+      break;
+    case "GROUP_ADDED":
+      message = (
+        <>
+          <span className="font-bold">{actor.name}</span> added you to the group{" "}
+          <span className="font-bold">{conversation?.name ?? "a group"}</span>
         </>
       );
       break;
@@ -126,7 +142,18 @@ function NotificationCard({
         </div>
       )}
 
-      {type === "FRIEND_REQUEST" && friendship?.status === "ACCEPTED" && (
+      {type === "GROUP_ADDED" && conversation?.id && (
+        <Link
+          href={`/app/${conversation.id}`}
+          aria-label={`Open group ${conversation.name ?? "chat"}`}
+          className="inline-flex items-center gap-1.5 shrink-0 px-3.5 py-2.5 rounded-2xl bg-[#1D4533] text-[#F7EAE0] hover:bg-[#1D4533]/90 text-xs font-bold shadow-sm transition-all"
+        >
+          <Users size={14} />
+          <span>View Group</span>
+        </Link>
+      )}
+
+      {friendship?.status === "ACCEPTED" && (
         <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 text-xs font-bold shrink-0">
           Friends
         </span>

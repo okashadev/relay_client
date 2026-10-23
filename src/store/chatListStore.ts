@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import type { ChatMessage, ChatPreview, ChatPreviewMessage } from "@/types/chat";
+import type {
+  ChatMessage,
+  ChatPreview,
+  ChatPreviewMessage,
+} from "@/types/chat";
 
 type MessageUpdate = {
   lastMessage: ChatPreviewMessage;
@@ -10,17 +14,18 @@ type MessageUpdate = {
 type ChatSettings = Pick<ChatPreview, "isPinned" | "isMuted" | "isArchived">;
 
 type ChatListState = {
-  // null: abhi tak load nahi hui
   chats: ChatPreview[] | null;
-  // Badhne par useChatList list dobara mangwata hai
   version: number;
   setChats: (chats: ChatPreview[]) => void;
   markRead: (conversationId: string) => void;
-  // true: handle ho gaya (ya list abhi load nahi hui). false: ye chat list mein hai hi nahi
   applyMessage: (conversationId: string, update: MessageUpdate) => boolean;
-  // Edit ya delete: agar ye wohi aakhri message hai to preview badlo
   applyMessageUpdate: (conversationId: string, message: ChatMessage) => void;
-  updateSettings: (conversationId: string, settings: Partial<ChatSettings>) => void;
+  updateSettings: (
+    conversationId: string,
+    settings: Partial<ChatSettings>,
+  ) => void;
+  removeChat: (conversationId: string) => void;
+  setBlockedForUser: (userId: string, blocked: boolean) => void;
   invalidate: () => void;
 };
 
@@ -51,7 +56,6 @@ export const useChatListStore = create<ChatListState>((set, get) => ({
     const current = chats.find((chat) => chat.id === conversationId);
     if (!current) return false;
 
-    // Purana ya wohi message dobara aaye (echo, reconnect): unread double na ginay
     if (Date.parse(update.lastMessageAt) <= Date.parse(current.lastMessageAt)) {
       return true;
     }
@@ -103,6 +107,30 @@ export const useChatListStore = create<ChatListState>((set, get) => ({
         ? {
             chats: state.chats.map((chat) =>
               chat.id === conversationId ? { ...chat, ...settings } : chat,
+            ),
+          }
+        : state,
+    ),
+
+  removeChat: (conversationId) =>
+    set((state) =>
+      state.chats
+        ? { chats: state.chats.filter((chat) => chat.id !== conversationId) }
+        : state,
+    ),
+
+  setBlockedForUser: (userId, blocked) =>
+    set((state) =>
+      state.chats
+        ? {
+            chats: state.chats.map((chat) =>
+              chat.otherUserId === userId
+                ? {
+                    ...chat,
+                    isBlocked: blocked,
+                    isOnline: blocked ? false : chat.isOnline,
+                  }
+                : chat,
             ),
           }
         : state,

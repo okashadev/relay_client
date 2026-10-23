@@ -14,6 +14,10 @@ const describe = (notification: NotificationNewPayload) => {
       return `${notification.actor.name} sent you a friend request`;
     case "FRIEND_ACCEPTED":
       return `${notification.actor.name} accepted your friend request`;
+    case "GROUP_ADDED":
+      return `${notification.actor.name} added you to the group ${
+        notification.conversation?.name ?? "a group"
+      }`;
     default:
       return "You have a new notification";
   }

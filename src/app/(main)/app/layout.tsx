@@ -23,7 +23,10 @@ export default function AppMainLayout({
       >
         <ChatList
           selectedChatId={activeChatId}
-          onSelectChat={(chatId: string) => router.push(`/app/${chatId}`)}
+          onSelectChat={(chatId) => router.push(`/app/${chatId}`)}
+          onChatRemoved={(chatId) => {
+            if (chatId === activeChatId) router.push("/app");
+          }}
         />
       </div>
 

@@ -21,5 +21,7 @@ export const apiRequest = async <T>(
     throw new ApiError(data?.error || "Something went wrong.", res.status);
   }
 
+  console.log(data);
+
   return data as T;
 };

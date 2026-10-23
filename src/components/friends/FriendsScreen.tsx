@@ -17,10 +17,14 @@ import NotificationBadge from "@/components/notifications/NotificationBadge";
 import { fetchFriends, FriendUser } from "@/lib/api/friendsApi";
 import UserAvatar from "../common/UserAvatar";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { FriendshipUpdatedPayload, SOCKET_EVENTS } from "@/lib/socket/socketEvents";
+import {
+  FriendshipUpdatedPayload,
+  SOCKET_EVENTS,
+} from "@/lib/socket/socketEvents";
 import { newChat } from "@/lib/api/ChatApi";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { usePresence } from "@/hooks/usePresence";
 
 function FriendSkeleton() {
   return (
@@ -36,6 +40,23 @@ function FriendSkeleton() {
         <div className="h-8 w-8 rounded-xl bg-[#1D4533]/10" />
       </div>
     </div>
+  );
+}
+
+function FriendStatusDot({ friend }: { friend: FriendUser }) {
+  const presence = usePresence(friend.id, {
+    status: friend.status,
+    lastSeen: null,
+  });
+  const online = presence?.status === "ONLINE";
+
+  return (
+    <span
+      aria-label={online ? "Online" : "Offline"}
+      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+        online ? "bg-emerald-500" : "bg-[#1D4533]/30"
+      }`}
+    />
   );
 }
 
@@ -219,16 +240,7 @@ export default function FriendsScreen() {
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="relative shrink-0">
                     <UserAvatar name={friend.name} avatar={friend.avatar} />
-                    <span
-                      aria-label={
-                        friend.status === "ONLINE" ? "Online" : "Offline"
-                      }
-                      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                        friend.status === "ONLINE"
-                          ? "bg-emerald-500"
-                          : "bg-[#1D4533]/30"
-                      }`}
-                    />
+                    <FriendStatusDot friend={friend} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-[#1D4533] group-hover:underline flex items-center gap-1 min-w-0">

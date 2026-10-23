@@ -4,6 +4,9 @@ import { useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import {
+  BlockUpdatedPayload,
+  ConversationClearedPayload,
+  ConversationSettingsPayload,
   SOCKET_EVENTS,
   type MessageNewPayload,
   type MessageRemovedPayload,
@@ -11,6 +14,12 @@ import {
 } from "@/lib/socket/socketEvents";
 import { useAuthStore } from "@/store/authStore";
 import { useChatListStore } from "@/store/chatListStore";
+import {
+  applyBlockState,
+  applyChatRemoved,
+  applyConversationSettings,
+} from "@/lib/chat/chatState";
+import { syncPresence } from "@/lib/presenceSync";
 
 export default function RealtimeMessages() {
   const pathname = usePathname() ?? "";
@@ -70,6 +79,24 @@ export default function RealtimeMessages() {
     wasDisconnected.current = false;
     useChatListStore.getState().invalidate();
   });
+
+  useSocketEvent<ConversationSettingsPayload>(
+    SOCKET_EVENTS.CONVERSATION_SETTINGS,
+    ({ conversationId, me }) => applyConversationSettings(conversationId, me),
+  );
+
+  useSocketEvent<ConversationClearedPayload>(
+    SOCKET_EVENTS.CONVERSATION_CLEARED,
+    ({ conversationId }) => applyChatRemoved(conversationId),
+  );
+
+  useSocketEvent<BlockUpdatedPayload>(
+    SOCKET_EVENTS.BLOCK_UPDATED,
+    ({ userId, blocked }) => {
+      applyBlockState(userId, blocked);
+      if (!blocked) void syncPresence();
+    },
+  );
 
   return null;
 }

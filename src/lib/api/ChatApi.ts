@@ -1,4 +1,11 @@
-import { ChatMessage, ChatPreview, ConversationDetails, ConversationMeState } from "@/types/chat";
+import {
+  BlockedUser,
+  ChatMessage,
+  ChatPreview,
+  ConversationDetails,
+  ConversationMeState,
+  PresenceStatus,
+} from "@/types/chat";
 import { apiRequest } from "@/lib/api/apiRequest";
 
 export type SendMessageBody =
@@ -144,3 +151,42 @@ export const updateChatSettings = (
     `/api/conversation/${encodeURIComponent(conversationId)}/settings`,
     { method: "PATCH", body: JSON.stringify(patch) },
   );
+
+export const deleteChat = (conversationId: string) =>
+  apiRequest<{ success: true }>(
+    `/api/conversation/${encodeURIComponent(conversationId)}`,
+    { method: "DELETE" },
+  );
+
+export const blockUser = (userId: string) =>
+  apiRequest<{ success: true }>("/api/blocks", {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
+
+export const unblockUser = (userId: string) =>
+  apiRequest<{ success: true }>(`/api/blocks/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+
+export const getBlockedUsers = async (signal?: AbortSignal) => {
+  const data = await apiRequest<{ users: BlockedUser[] }>("/api/blocks", {
+    signal,
+  });
+  return data.users;
+};
+
+export const getPresence = async (signal?: AbortSignal) => {
+  const data = await apiRequest<{
+    users: { id: string; status: PresenceStatus; lastSeen: string | null }[];
+  }>("/api/presence", { signal });
+  return data.users;
+};
+
+export const searchChats = async (query: string, signal?: AbortSignal) => {
+  const data = await apiRequest<{ chats: ChatPreview[] }>(
+    `/api/conversation/search?q=${encodeURIComponent(query)}`,
+    { signal },
+  );
+  return data.chats;
+};

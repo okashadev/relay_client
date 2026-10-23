@@ -27,6 +27,7 @@ import { describeMessage } from "@/lib/chat/messagePreview";
 import { canEditMessage } from "@/lib/chat/messageRules";
 import type { MessageTick } from "@/lib/chat/receipts";
 import type { ChatMessage } from "@/types/chat";
+import EmojiText, { isJumboEmoji } from "@/components/chats/shared/EmojiText";
 
 const aspectStyle = (message: ChatMessage) =>
   message.mediaWidth && message.mediaHeight
@@ -36,9 +37,11 @@ const aspectStyle = (message: ChatMessage) =>
 function MessageContent({
   message,
   isMine,
+  jumbo = false,
 }: {
   message: ChatMessage;
   isMine: boolean;
+  jumbo?: boolean;
 }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -54,7 +57,9 @@ function MessageContent({
 
   const textClass = "font-medium whitespace-pre-wrap [overflow-wrap:anywhere]";
   const caption = message.content ? (
-    <p className={textClass}>{message.content}</p>
+    <p className={textClass}>
+      <EmojiText text={message.content} />
+    </p>
   ) : null;
 
   switch (message.type) {
@@ -172,7 +177,11 @@ function MessageContent({
     }
 
     default:
-      return <p className={textClass}>{message.content}</p>;
+      return (
+        <p className={textClass}>
+          <EmojiText text={message.content} jumbo={jumbo} />
+        </p>
+      );
   }
 }
 
@@ -253,6 +262,12 @@ const MessageBubble = memo(function MessageBubble({
   const myReaction =
     message.reactions.find((reaction) => reaction.reactedByMe)?.emoji ?? null;
 
+  const jumbo =
+    message.type === "TEXT" &&
+    !isDeleted &&
+    !message.replyTo &&
+    !message.status &&
+    isJumboEmoji(message.content);
   const canReact = Boolean(onReact) && !isDeleted && !isPending;
   const canReply = Boolean(onReply) && !isDeleted && !isPending;
   const hasMenu = !isPending;
@@ -277,17 +292,38 @@ const MessageBubble = memo(function MessageBubble({
     const list: SheetAction[] = [];
 
     if (canReply) {
-      list.push({ key: "reply", label: "Reply", icon: Reply, onSelect: () => onReply?.(message) });
+      list.push({
+        key: "reply",
+        label: "Reply",
+        icon: Reply,
+        onSelect: () => onReply?.(message),
+      });
     }
     if (message.content && !isDeleted) {
       const text = message.content;
-      list.push({ key: "copy", label: "Copy text", icon: Copy, onSelect: () => copyToClipboard(text) });
+      list.push({
+        key: "copy",
+        label: "Copy text",
+        icon: Copy,
+        onSelect: () => copyToClipboard(text),
+      });
     }
     if (onEdit && canEditMessage(message, isMine)) {
-      list.push({ key: "edit", label: "Edit", icon: Pencil, onSelect: () => onEdit(message) });
+      list.push({
+        key: "edit",
+        label: "Edit",
+        icon: Pencil,
+        onSelect: () => onEdit(message),
+      });
     }
     if (onDelete) {
-      list.push({ key: "delete", label: "Delete", icon: Trash2, danger: true, onSelect: () => onDelete(message) });
+      list.push({
+        key: "delete",
+        label: "Delete",
+        icon: Trash2,
+        danger: true,
+        onSelect: () => onDelete(message),
+      });
     }
 
     return list;
@@ -357,10 +393,14 @@ const MessageBubble = memo(function MessageBubble({
           onTouchEnd={clearPress}
           onTouchMove={clearPress}
           onTouchCancel={clearPress}
-          className={`rounded-2xl px-3.5 py-2.5 shadow-sm text-xs leading-relaxed [-webkit-touch-callout:none] ${
-            isMine
-              ? "bg-[#1D4533] text-[#F7EAE0] rounded-br-sm"
-              : "bg-white text-[#5E3122] rounded-bl-sm border border-[#1D4533]/10"
+          className={`rounded-2xl text-xs leading-relaxed [-webkit-touch-callout:none] ${
+            jumbo
+              ? "px-1 py-1 bg-transparent text-[#5E3122]"
+              : `px-3.5 py-2.5 shadow-sm ${
+                  isMine
+                    ? "bg-[#1D4533] text-[#F7EAE0] rounded-br-sm"
+                    : "bg-white text-[#5E3122] rounded-bl-sm border border-[#1D4533]/10"
+                }`
           }`}
         >
           {message.replyTo && !isDeleted && (
@@ -375,14 +415,18 @@ const MessageBubble = memo(function MessageBubble({
                 {message.replyTo.senderName ?? "Message"}
               </p>
               <p className="line-clamp-2 wrap-anywhere">
-                {message.replyTo.deleted
-                  ? "This message was deleted"
-                  : describeMessage(message.replyTo) || "Message"}
+                <EmojiText
+                  text={
+                    message.replyTo.deleted
+                      ? "This message was deleted"
+                      : describeMessage(message.replyTo) || "Message"
+                  }
+                />
               </p>
             </div>
           )}
 
-          <MessageContent message={message} isMine={isMine} />
+          <MessageContent message={message} isMine={isMine} jumbo={jumbo} />
 
           {message.status === "uploading" && (
             <div className="mt-2" role="status" aria-label="Uploading">
@@ -420,7 +464,7 @@ const MessageBubble = memo(function MessageBubble({
 
           <div
             className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${
-              isMine ? "text-[#F9D2BA]/70" : "text-[#5E3122]/50"
+              isMine && !jumbo ? "text-[#F9D2BA]/70" : "text-[#5E3122]/50"
             }`}
           >
             {message.editedAt && !isDeleted && <span>edited</span>}
@@ -450,7 +494,7 @@ const MessageBubble = memo(function MessageBubble({
                     : "bg-white border-[#1D4533]/15 text-[#5E3122]"
                 }`}
               >
-                <span>{reaction.emoji}</span>
+                <EmojiText text={reaction.emoji} size="1.2em" />
                 {reaction.count > 1 && (
                   <span className="font-bold">{reaction.count}</span>
                 )}

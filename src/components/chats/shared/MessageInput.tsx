@@ -10,6 +10,7 @@ import {
   Mic,
   Pencil,
   Plus,
+  Smile,
   Trash2,
   X,
 } from "lucide-react";
@@ -26,6 +27,14 @@ import { formatDuration } from "@/lib/format";
 import { describeMessage } from "@/lib/chat/messagePreview";
 import type { EditDraft, ReplyDraft } from "@/types/chat";
 
+import dynamic from "next/dynamic";
+import type { EmojiClickData, EmojiStyle } from "emoji-picker-react";
+import EmojiText from "@/components/chats/shared/EmojiText";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
+  ssr: false,
+});
+
 type Attachment = {
   id: string;
   file: File;
@@ -41,6 +50,8 @@ type MessageInputProps = {
   editing: EditDraft | null;
   onCancelEdit: () => void;
   onSubmitEdit: (text: string) => Promise<void>;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
   onSendText: (text: string) => void;
   onSendFiles: (
     items: { file: File; kind: FileKind }[],
@@ -65,11 +76,14 @@ export default function MessageInput({
   onSendText,
   onSendFiles,
   onSendVoice,
+  onTyping,
+  onStopTyping,
 }: MessageInputProps) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +129,31 @@ export default function MessageInput({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
+
+  const insertEmoji = (data: EmojiClickData) => {
+    const el = inputRef.current;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    const next = text.slice(0, start) + data.emoji + text.slice(end);
+
+    setText(next);
+    if (!editing) onTyping?.();
+
+    requestAnimationFrame(() => {
+      el?.focus();
+      const pos = start + data.emoji.length;
+      el?.setSelectionRange(pos, pos);
+    });
+  };
+
+  useEffect(() => {
+    if (!emojiOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setEmojiOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [emojiOpen]);
 
   const stageFiles = useCallback((files: File[]) => {
     if (files.length === 0) return;
@@ -183,8 +222,10 @@ export default function MessageInput({
     else if (replyTo) onCancelReply();
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SyntheticEvent) => {
     event.preventDefault();
+    onStopTyping?.();
+    setEmojiOpen(false);
 
     const value = text.trim();
 
@@ -225,7 +266,7 @@ export default function MessageInput({
     : trimmed.length > 0 || attachments.length > 0;
 
   return (
-    <div className="bg-[#F7EAE0] border-t border-[#1D4533]/10 shrink-0">
+    <div className="relative bg-[#F7EAE0] border-t border-[#1D4533]/10 shrink-0">
       {replyTo && !editing && (
         <div className="px-3 sm:px-4 pt-3">
           <div className="flex items-start gap-2 rounded-2xl bg-white border border-[#1D4533]/10 border-l-4 border-l-[#1D4533] px-3 py-2">
@@ -234,7 +275,7 @@ export default function MessageInput({
                 Replying to {replyTo.senderName}
               </p>
               <p className="text-[11px] text-[#5E3122]/70 line-clamp-1 wrap-anywhere">
-                {describeMessage(replyTo) || "Message"}
+                <EmojiText text={describeMessage(replyTo) || "Message"} />
               </p>
             </div>
             <button
@@ -258,7 +299,7 @@ export default function MessageInput({
                 Editing message
               </p>
               <p className="text-[11px] text-[#5E3122]/70 line-clamp-1 wrap-anywhere">
-                {editing.content || "Caption"}
+                <EmojiText text={editing.content || "Caption"} />
               </p>
             </div>
             <button
@@ -417,6 +458,19 @@ export default function MessageInput({
             </div>
           )}
 
+          <button
+            type="button"
+            onClick={() => setEmojiOpen((open) => !open)}
+            aria-label="Emoji"
+            aria-pressed={emojiOpen}
+            title="Emoji"
+            className={`w-10 h-10 rounded-2xl border border-[#1D4533]/10 flex items-center justify-center text-[#1D4533] transition-colors cursor-pointer shrink-0 ${
+              emojiOpen ? "bg-[#F9D2BA]" : "bg-white hover:bg-[#1D4533]/5"
+            }`}
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+
           <input
             ref={inputRef}
             type="text"
@@ -431,7 +485,15 @@ export default function MessageInput({
                   : placeholder
             }
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setText(value);
+
+              if (editing) return;
+              if (value.trim()) onTyping?.();
+              else onStopTyping?.();
+            }}
+            onBlur={onStopTyping}
             onPaste={handlePaste}
             onKeyDown={handleKeyDown}
             className="flex-1 min-w-0 px-4 py-2.5 bg-white border border-[#1D4533]/10 focus:border-[#1D4533] rounded-2xl text-base md:text-xs text-[#5E3122] placeholder-[#5E3122]/40 outline-none transition-all focus:ring-2 focus:ring-[#1D4533]/10 font-medium"
@@ -466,6 +528,29 @@ export default function MessageInput({
             </button>
           )}
         </form>
+      )}
+      
+      {emojiOpen && !recorder.isRecording && (
+        <>
+          <button
+            type="button"
+            aria-label="Close emoji picker"
+            tabIndex={-1}
+            onClick={() => setEmojiOpen(false)}
+            className="fixed inset-0 z-10 cursor-default"
+          />
+          <div className="absolute bottom-full left-3 sm:left-4 mb-2 z-20">
+            <EmojiPicker
+              onEmojiClick={insertEmoji}
+              emojiStyle={"apple" as EmojiStyle}
+              width="min(340px, calc(100vw - 1.5rem))"
+              height={380}
+              lazyLoadEmojis
+              skinTonesDisabled
+              previewConfig={{ showPreview: false }}
+            />
+          </div>
+        </>
       )}
     </div>
   );

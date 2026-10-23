@@ -4,11 +4,13 @@ import { Ban, BellOff, CheckCircle2, Trash2, X } from "lucide-react";
 import UserAvatar from "@/components/common/UserAvatar";
 import { formatLastSeen } from "@/lib/format";
 import type { ChatUser } from "@/types/chat";
+import { usePresence } from "@/hooks/usePresence";
 
 interface UserContactProfilePanelProps {
   user: ChatUser;
+  isMuted?: boolean;
+  isBlocked?: boolean;
   onClose: () => void;
-  // TODO: backend ke APIs banne ke baad (mutedUntil, clearedAt, Block table)
   onMute?: () => void;
   onClearChat?: () => void;
   onBlock?: () => void;
@@ -20,13 +22,39 @@ export default function UserContactProfilePanel({
   onMute,
   onClearChat,
   onBlock,
+  isMuted = false,
+  isBlocked = false,
 }: UserContactProfilePanelProps) {
-  const isOnline = user.status === "ONLINE";
+  const presence = usePresence(user.id, {
+    status: user.status,
+    lastSeen: user.lastSeen,
+  });
+  const isOnline = presence?.status === "ONLINE";
 
   const actions = [
-    { key: "mute", label: "Mute notifications", icon: BellOff, danger: false, onClick: onMute },
-    { key: "clear", label: "Clear chat", icon: Trash2, danger: true, onClick: onClearChat },
-    { key: "block", label: `Block @${user.username}`, icon: Ban, danger: true, onClick: onBlock },
+    {
+      key: "mute",
+      label: isMuted ? "Unmute notifications" : "Mute notifications",
+      icon: BellOff,
+      danger: false,
+      onClick: onMute,
+    },
+    {
+      key: "clear",
+      label: "Delete chat",
+      icon: Trash2,
+      danger: true,
+      onClick: onClearChat,
+    },
+    {
+      key: "block",
+      label: isBlocked
+        ? `Unblock @${user.username}`
+        : `Block @${user.username}`,
+      icon: Ban,
+      danger: !isBlocked,
+      onClick: onBlock,
+    },
   ];
 
   return (
@@ -48,7 +76,7 @@ export default function UserContactProfilePanel({
 
       {/* Banner & Avatar */}
       <div className="relative bg-[#F3D7C6] border-b border-[#1D4533]/10 pb-6">
-        <div className="h-20 w-full bg-[linear-gradient(to_right,#1D45330a_1px,transparent_1px),linear-gradient(to_bottom,#1D45330a_1px,transparent_1px)] bg-[size:16px_16px] relative">
+        <div className="h-20 w-full bg-[linear-gradient(to_right,#1D45330a_1px,transparent_1px),linear-gradient(to_bottom,#1D45330a_1px,transparent_1px)] bg-size-[16px_16px] relative">
           <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-[#1D4533]/10 flex items-center gap-1.5 shadow-sm">
             <span
               className={`w-2 h-2 rounded-full ${
@@ -89,12 +117,12 @@ export default function UserContactProfilePanel({
           <span className="text-[10px] font-bold text-[#1D4533] uppercase tracking-wider">
             About
           </span>
-          <p className="text-[11px] text-[#5E3122]/80 leading-relaxed font-medium [overflow-wrap:anywhere]">
+          <p className="text-[11px] text-[#5E3122]/80 leading-relaxed font-medium wrap-anywhere">
             {user.bio || "No bio yet."}
           </p>
-          {!isOnline && (
+          {!isOnline && presence?.lastSeen && (
             <p className="pt-2 border-t border-[#1D4533]/10 text-[10px] text-[#5E3122]/60 font-medium">
-              {formatLastSeen(user.lastSeen)}
+              {formatLastSeen(presence.lastSeen)}
             </p>
           )}
         </div>

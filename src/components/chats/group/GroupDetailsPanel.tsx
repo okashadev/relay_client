@@ -13,12 +13,19 @@ import {
 import GroupAvatar from "@/components/common/GroupAvatar";
 import UserAvatar from "@/components/common/UserAvatar";
 import { timeAgo } from "@/lib/time";
-import type { ChatGroup, ParticipantRole, SharedMediaItem } from "@/types/chat";
+import type {
+  ChatGroup,
+  ChatUser,
+  ParticipantRole,
+  SharedMediaItem,
+} from "@/types/chat";
+import { usePresenceStore } from "@/store/presenceStore";
 
 interface GroupDetailsPanelProps {
   group: ChatGroup;
   meId: string;
   sharedMedia: SharedMediaItem[];
+  isMuted?: boolean;
   onClose: () => void;
   onAddMembers?: () => void;
   onMute?: () => void;
@@ -47,8 +54,14 @@ export default function GroupDetailsPanel({
   onAddMembers,
   onMute,
   onLeave,
+  isMuted = false,
 }: GroupDetailsPanelProps) {
   const canManageMembers = group.myRole === "OWNER" || group.myRole === "ADMIN";
+
+  const presenceByUser = usePresenceStore((state) => state.byUser);
+
+  const statusOf = (user: ChatUser) =>
+    presenceByUser[user.id] ?? { status: user.status, lastSeen: user.lastSeen };
 
   const members = useMemo(
     () =>
@@ -62,9 +75,10 @@ export default function GroupDetailsPanel({
     [group.members],
   );
 
-  const onlineCount = group.members.filter(
-    (member) => member.user.status === "ONLINE",
-  ).length;
+  const onlineCount = group.members.filter((member) => {
+    const live = statusOf(member.user);
+    live.status === "ONLINE";
+  }).length;
 
   const createdDate = new Date(group.createdAt).toLocaleDateString([], {
     month: "short",
@@ -134,7 +148,9 @@ export default function GroupDetailsPanel({
             className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white border border-[#1D4533]/10 text-[#1D4533] hover:bg-[#1D4533]/5 transition-colors cursor-pointer"
           >
             <VolumeX className="w-4 h-4 mb-1" />
-            <span className="text-[9px] font-bold">Mute</span>
+            <span className="text-[9px] font-bold">
+              {isMuted ? "Unmute" : "Mute"}
+            </span>
           </button>
           <button
             type="button"
@@ -195,8 +211,9 @@ export default function GroupDetailsPanel({
 
         <ul className="space-y-1">
           {members.map(({ user, role }) => {
-            const isOnline = user.status === "ONLINE";
+            const live = statusOf(user);
             const roleLabel = ROLE_LABEL[role];
+            const isOnline = live.status === "ONLINE";
 
             return (
               <li
@@ -229,8 +246,8 @@ export default function GroupDetailsPanel({
                     <p className="text-[9px] text-[#5E3122]/60 font-medium truncate">
                       @{user.username}
                       {!isOnline &&
-                        user.lastSeen &&
-                        ` • ${timeAgo(user.lastSeen)}`}
+                        live.lastSeen &&
+                        ` • ${timeAgo(live.lastSeen)}`}
                     </p>
                   </div>
                 </div>

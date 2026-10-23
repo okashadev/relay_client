@@ -9,6 +9,7 @@ import {
   type MessageUpdatedPayload,
   type MessageNewPayload,
   SOCKET_EVENTS,
+  ConversationClearedPayload,
 } from "@/lib/socket/socketEvents";
 import type { ChatMessage } from "@/types/chat";
 
@@ -198,6 +199,15 @@ export function useConversationMessages(conversationId: string) {
     SOCKET_EVENTS.MESSAGE_REMOVED,
     ({ conversationId: id, messageId }) => {
       if (id === conversationId) removeMessageById(messageId);
+    },
+  );
+
+   useSocketEvent<ConversationClearedPayload>(
+    SOCKET_EVENTS.CONVERSATION_CLEARED,
+    ({ conversationId: id }) => {
+      if (id !== conversationId) return;
+      setMessages([]);
+      setNextCursor(null);
     },
   );
 

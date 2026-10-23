@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import UserAvatar from "../common/UserAvatar";
 import { newChat } from "@/lib/api/ChatApi";
 import { toast } from "sonner";
+import { createGroup } from "@/lib/api/groupApi";
 
 export default function NewChatDropdownButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,13 +28,13 @@ export default function NewChatDropdownButton() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [isOpenChatLoading, setIsOpenChatLoading] = useState(false);
   const [friendSearchQuery, setFriendSearchQuery] = useState("");
   const router = useRouter();
 
   const [groupName, setGroupName] = useState("");
   const [groupDesc, setGroupDesc] = useState("");
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [iscreateGroupLoading, setIsCreateGroupLoading] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -74,7 +75,6 @@ export default function NewChatDropdownButton() {
 
   const openChat = async (otherUserId: string) => {
     if (!otherUserId) return;
-    setIsOpenChatLoading(true);
     try {
       const { success, conversation } = await newChat(otherUserId);
       const conversationId = conversation?.id;
@@ -87,12 +87,11 @@ export default function NewChatDropdownButton() {
         err instanceof Error ? err.message : "Could not open the chat",
       );
     } finally {
-      setIsOpenChatLoading(false);
     }
   };
 
   const toggleMemberSelection = (id: string) => {
-    setSelectedMembers((prev) =>
+    setSelectedMemberIds((prev) =>
       prev.includes(id) ? prev.filter((mId) => mId !== id) : [...prev, id],
     );
   };
@@ -104,6 +103,39 @@ export default function NewChatDropdownButton() {
       friend.username.toLowerCase().includes(q)
     );
   });
+
+  const handleCreateGroup = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+
+    if (!groupName.trim() || selectedMemberIds.length < 2) {
+      return;
+    }
+
+    setIsCreateGroupLoading(true);
+    try {
+      const group = await createGroup({
+        name: groupName.trim(),
+        description: groupDesc.trim(),
+        memberIds: selectedMemberIds,
+      });
+
+      if (group?.success) {
+        toast.success("Group Created!");
+
+        setActiveModal("none");
+        setGroupName("");
+        setGroupDesc("");
+        setSelectedMemberIds([]);
+
+        router.push(`/app/${group.conversation.id}`);
+      }
+    } catch (error: any) {
+      toast.error(error.message ||  "something went wrong!")
+      console.log("create group error", error);
+    } finally {
+      setIsCreateGroupLoading(false);
+    }
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -332,11 +364,11 @@ export default function NewChatDropdownButton() {
 
                 <div>
                   <label className="block text-[11px] font-bold text-[#1D4533] mb-2">
-                    Select Members ({selectedMembers.length} selected)
+                    Select Members ({selectedMemberIds.length} selected)
                   </label>
                   <div className="space-y-2">
                     {friends.map((friend) => {
-                      const isSelected = selectedMembers.includes(friend.id);
+                      const isSelected = selectedMemberIds.includes(friend.id);
                       return (
                         <div
                           key={friend.id}
@@ -385,19 +417,16 @@ export default function NewChatDropdownButton() {
                   Cancel
                 </button>
                 <button
-                  disabled={!groupName.trim() || selectedMembers.length === 0}
-                  onClick={() => {
-                    alert(
-                      `Group "${groupName}" created with ${selectedMembers.length} members!`,
-                    );
-                    setActiveModal("none");
-                    setGroupName("");
-                    setGroupDesc("");
-                    setSelectedMembers([]);
-                  }}
+                  type="button"
+                  disabled={
+                    !groupName.trim() ||
+                    selectedMemberIds.length < 2 ||
+                    iscreateGroupLoading
+                  }
+                  onClick={handleCreateGroup}
                   className="px-5 py-2 rounded-xl bg-[#1D4533] disabled:opacity-50 text-[#F9D2BA] text-xs font-bold shadow-md hover:bg-[#1D4533]/90 transition-all cursor-pointer"
                 >
-                  Create Group
+                  {iscreateGroupLoading ? "Creating..." : "Create Group"}
                 </button>
               </div>
             </motion.div>

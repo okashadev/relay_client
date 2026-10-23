@@ -41,6 +41,8 @@ export type ChatPreview = {
   name: string;
   avatar: string | null;
   isOnline: boolean;
+  otherUserId: string | null;
+  isBlocked: boolean;
   lastMessage: ChatPreviewMessage | null;
   lastMessageAt: string;
   unreadCount: number;
@@ -142,14 +144,31 @@ export type DirectConversationDetails = {
   otherUser: ChatUser;
   me: ConversationMeState;
   receipts: Receipts;
+  blockedByMe: boolean;
+  canSend: boolean;
 };
 
 export type GroupConversationDetails = ChatGroup & {
   type: "GROUP";
   me: ConversationMeState;
   receipts: Receipts;
+  blockedByMe: boolean;
+  canSend: boolean;
 };
 
 export type ConversationDetails =
   | DirectConversationDetails
   | GroupConversationDetails;
+
+export type PresenceInfo = {
+  status: PresenceStatus;
+  lastSeen: string | null;
+};
+
+export type BlockedUser = {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string | null;
+  blockedAt: string;
+};

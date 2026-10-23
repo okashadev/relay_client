@@ -15,6 +15,7 @@ import type {
   EditDraft,
   ReplyDraft,
 } from "@/types/chat";
+import { useTypingEmitter } from "./useTypingEmitter";
 
 export type DeleteDialogConfig = {
   canDeleteEveryone: boolean;
@@ -31,7 +32,9 @@ export function useChatSession({
 }) {
   const meId = useAuthStore((state) => state.user?.id) ?? "";
   const fallbackName =
-    conversation.type === "DIRECT" ? conversation.otherUser.name : "Deleted user";
+    conversation.type === "DIRECT"
+      ? conversation.otherUser.name
+      : "Deleted user";
 
   const { sendText, sendFiles, sendVoice, retry, discard } = useMessageSender({
     conversationId: conversation.id,
@@ -44,6 +47,8 @@ export function useChatSession({
   });
   const receipts = useReceipts(conversation.id, conversation.receipts);
 
+  const typing = useTypingEmitter(conversation.id);
+
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
   const [editing, setEditing] = useState<EditDraft | null>(null);
   const [deleting, setDeleting] = useState<ChatMessage | null>(null);
@@ -54,7 +59,9 @@ export function useChatSession({
       setReplyTo({
         id: message.id,
         senderName:
-          message.senderId === meId ? "You" : (message.sender?.name ?? fallbackName),
+          message.senderId === meId
+            ? "You"
+            : (message.sender?.name ?? fallbackName),
         type: message.type,
         content: message.content,
         fileName: message.fileName,
@@ -65,7 +72,11 @@ export function useChatSession({
 
   const handleEdit = useCallback((message: ChatMessage) => {
     setReplyTo(null);
-    setEditing({ id: message.id, type: message.type, content: message.content ?? "" });
+    setEditing({
+      id: message.id,
+      type: message.type,
+      content: message.content ?? "",
+    });
   }, []);
 
   const cancelReply = useCallback(() => setReplyTo(null), []);
@@ -103,7 +114,9 @@ export function useChatSession({
         await edit(editing.id, text);
         setEditing(null);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Couldn't edit the message.");
+        toast.error(
+          error instanceof Error ? error.message : "Couldn't edit the message.",
+        );
       }
     },
     [editing, edit],
@@ -113,7 +126,10 @@ export function useChatSession({
     () =>
       deleting
         ? {
-            canDeleteEveryone: canDeleteForEveryone(deleting, deleting.senderId === meId),
+            canDeleteEveryone: canDeleteForEveryone(
+              deleting,
+              deleting.senderId === meId,
+            ),
             onClose: () => setDeleting(null),
             onConfirm: async (scope) => {
               try {
@@ -121,7 +137,9 @@ export function useChatSession({
                 setDeleting(null);
               } catch (error) {
                 toast.error(
-                  error instanceof Error ? error.message : "Couldn't delete the message.",
+                  error instanceof Error
+                    ? error.message
+                    : "Couldn't delete the message.",
                 );
               }
             },
@@ -143,6 +161,8 @@ export function useChatSession({
       onReact: react,
       onRetry: retry,
       onDiscard: discard,
+      onTyping: typing.notify,
+      onStopTyping: typing.stop,
     },
     inputProps: {
       replyTo,
@@ -153,6 +173,8 @@ export function useChatSession({
       onSendText: handleSendText,
       onSendFiles: handleSendFiles,
       onSendVoice: handleSendVoice,
+      onTyping: typing.notify,
+      onStopTyping: typing.stop,
     },
   };
 }
