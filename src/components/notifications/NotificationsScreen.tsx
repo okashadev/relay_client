@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Bell,
-  Check,
-  Loader2,
-  Users,
-  RefreshCw,
-  X,
-} from "lucide-react";
+import { Bell, Check, Loader2, Users, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import UserAvatar from "@/components/common/UserAvatar";
@@ -18,17 +11,17 @@ import { acceptFriendRequest, rejectFriendRequest } from "@/lib/api/friendsApi";
 import {
   fetchNotifications,
   markAllNotificationsRead,
-  type NotificationItem,
 } from "@/lib/api/notificationsApi";
 import { timeAgo } from "@/lib/time";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import {
-  FriendshipUpdatedPayload,
-  NotificationNewPayload,
+  type FriendshipUpdatedPayload,
+  type NotificationNewPayload,
   SOCKET_EVENTS,
 } from "@/lib/socket/socketEvents";
 import Link from "next/link";
+import type { NotificationItem } from "@/types/notifications";
 
 function NotificationSkeleton() {
   return (

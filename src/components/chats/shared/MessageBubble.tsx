@@ -28,6 +28,7 @@ import { canEditMessage } from "@/lib/chat/messageRules";
 import type { MessageTick } from "@/lib/chat/receipts";
 import type { ChatMessage } from "@/types/chat";
 import EmojiText, { isJumboEmoji } from "@/components/chats/shared/EmojiText";
+import StoryQuote from "@/components/chats/shared/StoryQuote";
 
 const aspectStyle = (message: ChatMessage) =>
   message.mediaWidth && message.mediaHeight
@@ -403,6 +404,9 @@ const MessageBubble = memo(function MessageBubble({
                 }`
           }`}
         >
+          {message.story && !isDeleted && (
+            <StoryQuote story={message.story} isMine={isMine} />
+          )}
           {message.replyTo && !isDeleted && (
             <div
               className={`mb-2 border-l-2 pl-2 text-[10px] ${

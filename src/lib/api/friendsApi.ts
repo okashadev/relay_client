@@ -1,26 +1,11 @@
 import { apiRequest } from "@/lib/api/apiRequest";
+import type {
+  FriendUser,
+  Relationship,
+  RelationshipResult,
+} from "@/types/friends";
 
-export type Relationship =
-  | "NONE"
-  | "REQUEST_SENT"
-  | "REQUEST_RECEIVED"
-  | "FRIENDS";
-
-export type FriendUser = {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string | null;
-  bio: string | null;
-  relationship: Relationship;
-  status: "ONLINE" | "OFFLINE";
-  friendshipId: string | null;
-};
-
-type RelationshipResult = {
-  relationship: Relationship;
-  friendshipId: string | null;
-};
+export type { FriendUser, Relationship, RelationshipResult };
 
 export const fetchSuggestions = async (
   limit: number,
@@ -30,7 +15,7 @@ export const fetchSuggestions = async (
     `/api/friends/suggestions?limit=${limit}`,
     { signal },
   );
-  return data.users ?? [];
+  return data?.users ?? [];
 };
 
 export const searchUsers = async (
@@ -41,7 +26,7 @@ export const searchUsers = async (
     `/api/friends/search?q=${encodeURIComponent(query)}`,
     { signal },
   );
-  return data.users ?? [];
+  return data?.users ?? [];
 };
 
 export const sendFriendRequest = (receiverId: string) =>
@@ -80,5 +65,5 @@ export const fetchFriends = async (
   const data = await apiRequest<{ friends: FriendUser[] }>("/api/friends", {
     signal,
   });
-  return data.friends ?? [];
+  return data?.friends ?? [];
 };

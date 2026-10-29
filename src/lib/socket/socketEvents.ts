@@ -1,6 +1,6 @@
-import { NotificationItem } from "@/lib/api/notificationsApi";
-import { Relationship } from "../api/friendsApi";
 import { ChatMessage, ConversationMeState, PresenceStatus } from "@/types/chat";
+import { Relationship } from "@/types/friends";
+import { NotificationItem } from "@/types/notifications";
 
 export const SOCKET_EVENTS = {
   NOTIFICATION_NEW: "notification:new",
@@ -14,6 +14,7 @@ export const SOCKET_EVENTS = {
   CONVERSATION_SETTINGS: "conversation:settings",
   CONVERSATION_CLEARED: "conversation:cleared",
   BLOCK_UPDATED: "block:updated",
+  GROUP_UPDATED: "group:updated",
 } as const;
 
 export const CLIENT_EVENTS = {
@@ -70,3 +71,4 @@ export type ConversationSettingsPayload = {
 
 export type ConversationClearedPayload = { conversationId: string };
 export type BlockUpdatedPayload = { userId: string; blocked: boolean };
+export type GroupUpdatedPayload = { conversationId: string };

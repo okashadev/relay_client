@@ -15,7 +15,6 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  MessageSquare,
   AlertCircle,
   CheckCircle2,
   ArrowLeft,
@@ -24,6 +23,7 @@ import { RegisterFormValues, registerSchema } from "@/validators/auth";
 import { calculatePasswordStrength } from "@/utils/password";
 import { toast } from "sonner";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
+import RelayLogo from "@/components/common/RelayLogo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -77,9 +77,7 @@ export default function RegisterPage() {
       }
 
       toast.success(resData.message || "Account created successfully!");
-      router.push(
-        `/verify-email?email=${encodeURIComponent(resData.email)}`,
-      );
+      router.push(`/verify-email?email=${encodeURIComponent(resData.email)}`);
     } catch (err: any) {
       setServerError(err.error || "Something went wrong during registration");
     } finally {
@@ -96,7 +94,7 @@ export default function RegisterPage() {
     >
       <div className="flex lg:hidden items-center justify-center gap-2.5 mb-2">
         <div className="w-9 h-9 rounded-xl bg-[#1D4533] flex items-center justify-center shadow-md">
-          <MessageSquare className="w-4 h-4 text-[#F9D2BA]" />
+          <RelayLogo bgScheme="green" size={40} variant="shadow" />
         </div>
         <span className="text-xl font-bold tracking-tight text-[#1D4533]">
           Relay

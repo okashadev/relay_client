@@ -20,18 +20,22 @@ import { useTypers } from "@/hooks/useTypers";
 import { typingLabel } from "@/lib/chat/typing";
 import { usePresenceStore } from "@/store/presenceStore";
 import type { GroupConversationDetails } from "@/types/chat";
+import { useGroupActions } from "@/hooks/useGroupActions";
 
 interface GroupChatViewProps {
   conversation: GroupConversationDetails;
   messagesState: ConversationMessagesState;
+  onRefresh: () => Promise<void>;
 }
 
 export default function GroupChatView({
   conversation,
   messagesState,
+  onRefresh,
 }: GroupChatViewProps) {
   const router = useRouter();
   const session = useChatSession({ conversation, messagesState });
+  const actions = useGroupActions(conversation.id, onRefresh);
   const { me } = useChatMeta(conversation, null);
   const typers = useTypers(conversation.id);
   const presenceByUser = usePresenceStore((state) => state.byUser);
@@ -59,7 +63,6 @@ export default function GroupChatView({
   return (
     <div className="flex-1 min-w-0 h-full flex overflow-hidden bg-[#F7EAE0] relative">
       <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
-        {/* Group Header */}
         <header className="px-3 sm:px-6 py-3 bg-[#F7EAE0]/90 backdrop-blur-md border-b border-[#1D4533]/10 flex items-center justify-between gap-2 z-10 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
@@ -149,10 +152,11 @@ export default function GroupChatView({
         label="Group info"
       >
         <GroupDetailsPanel
-          group={conversation}
+          conversation={conversation}
           meId={session.meId}
           isMuted={me.isMuted}
           onMute={() => void menu.toggleMute()}
+          actions={actions}
           sharedMedia={[]}
           onClose={closeDetails}
         />

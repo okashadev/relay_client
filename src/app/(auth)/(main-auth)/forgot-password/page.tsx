@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useState } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import {
   Mail,
   ArrowRight,
@@ -15,13 +15,11 @@ import {
   ShieldCheck,
   AlertCircle,
   CheckCircle2,
-} from 'lucide-react';
+} from "lucide-react";
+import RelayLogo from "@/components/common/RelayLogo";
 
 const forgotPasswordSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Enter a valid email address'),
+  email: z.email("Enter a valid email address").min(1, "Email is required"),
 });
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
@@ -30,7 +28,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState('');
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   const {
     register,
@@ -39,7 +37,7 @@ export default function ForgotPasswordPage() {
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: '',
+      email: "",
     },
   });
 
@@ -48,23 +46,24 @@ export default function ForgotPasswordPage() {
     setServerError(null);
 
     try {
-      // Backend API Call to send reset email (e.g. Nodemailer + Brevo)
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const resData = await response.json();
 
       if (!response.ok) {
-        throw new Error(resData.message || 'Failed to send password reset email');
+        throw new Error(
+          resData.message || "Failed to send password reset email",
+        );
       }
 
       setSubmittedEmail(data.email);
       setIsSubmitted(true);
     } catch (err: any) {
-      setServerError(err.message || 'Something went wrong. Please try again.');
+      setServerError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -74,13 +73,12 @@ export default function ForgotPasswordPage() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full space-y-6 max-w-md mx-auto"
     >
-      {/* Mobile Branding Header */}
       <div className="flex lg:hidden items-center justify-center gap-2.5 mb-2">
         <div className="w-9 h-9 rounded-xl bg-[#1D4533] flex items-center justify-center shadow-md">
-          <MessageSquare className="w-4 h-4 text-[#F9D2BA]" />
+          <RelayLogo bgScheme="green" size={40} variant="shadow" />
         </div>
         <span className="text-xl font-bold tracking-tight text-[#1D4533]">
           Relay
@@ -90,7 +88,7 @@ export default function ForgotPasswordPage() {
       {/* Header Title & Subtitle */}
       <div className="text-center lg:text-left space-y-1.5">
         <h1 className="text-2xl font-extrabold text-[#1D4533] tracking-tight">
-          {isSubmitted ? 'Check your email' : 'Forgot Password?'}
+          {isSubmitted ? "Check your email" : "Forgot Password?"}
         </h1>
         <p className="text-xs text-[#5E3122]/70 font-medium">
           {isSubmitted
@@ -121,7 +119,10 @@ export default function ForgotPasswordPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 relative z-10">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4 relative z-10"
+              >
                 {/* Email Input */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1D4533] block">
@@ -130,7 +131,7 @@ export default function ForgotPasswordPage() {
                   <div className="relative group">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5E3122]/50 group-focus-within:text-[#1D4533] transition-colors" />
                     <input
-                      {...register('email')}
+                      {...register("email")}
                       type="email"
                       placeholder="name@example.com"
                       className="w-full pl-10 pr-4 py-2.5 bg-[#F7EAE0] border border-[#1D4533]/20 focus:border-[#1D4533] rounded-xl text-xs text-[#5E3122] placeholder-[#5E3122]/40 outline-none transition-all focus:ring-2 focus:ring-[#1D4533]/15 font-medium"
@@ -179,7 +180,8 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5E3122]/80 font-medium">
-                  Please check your inbox. If you don't see the email within a few minutes, check your spam folder.
+                  Please check your inbox. If you don't see the email within a
+                  few minutes, check your spam folder.
                 </p>
               </div>
 

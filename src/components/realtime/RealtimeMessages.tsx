@@ -7,6 +7,7 @@ import {
   BlockUpdatedPayload,
   ConversationClearedPayload,
   ConversationSettingsPayload,
+  GroupUpdatedPayload,
   SOCKET_EVENTS,
   type MessageNewPayload,
   type MessageRemovedPayload,
@@ -97,6 +98,10 @@ export default function RealtimeMessages() {
       if (!blocked) void syncPresence();
     },
   );
+
+  useSocketEvent<GroupUpdatedPayload>(SOCKET_EVENTS.GROUP_UPDATED, () => {
+    useChatListStore.getState().invalidate();
+  });
 
   return null;
 }

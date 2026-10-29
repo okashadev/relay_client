@@ -9,6 +9,15 @@ export type MessageType =
   | "VOICE"
   | "SYSTEM";
 
+export type StoryRef = {
+  id: string;
+  type: "IMAGE" | "VIDEO" | "TEXT";
+  available: boolean;
+  thumbnailUrl: string | null;
+  caption: string | null;
+  backgroundColor: string | null;
+};
+
 export type ChatUser = {
   id: string;
   name: string;
@@ -91,6 +100,7 @@ export type ChatMessage = {
     fileName: string | null;
     deleted?: boolean;
   } | null;
+  story: StoryRef | null;
   reactions: ReactionSummary[];
   editedAt: string | null;
   deletedAt: string | null;

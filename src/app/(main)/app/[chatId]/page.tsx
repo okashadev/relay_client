@@ -97,7 +97,7 @@ function ChatScreen({ chatId }: { chatId: string }) {
   const { conversation } = details;
 
   return conversation.type === "GROUP" ? (
-    <GroupChatView conversation={conversation} messagesState={messagesState} />
+    <GroupChatView conversation={conversation} messagesState={messagesState} onRefresh={details.refresh} />
   ) : (
     <DirectChat conversation={conversation} messagesState={messagesState} />
   );

@@ -13,12 +13,11 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  MessageSquare,
   AlertCircle,
   CheckCircle2,
   KeyRound,
-  ShieldCheck,
 } from "lucide-react";
+import RelayLogo from "@/components/common/RelayLogo";
 
 const resetPasswordSchema = z
   .object({
@@ -225,9 +224,7 @@ function ResetPasswordForm() {
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#5E3122]/50 hover:text-[#1D4533] transition-colors cursor-pointer"
                   >
                     {showConfirmPassword ? (
@@ -304,11 +301,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F7EAE0] text-[#5E3122] font-sans p-4 relative overflow-hidden selection:bg-[#F9D2BA] selection:text-[#5E3122]">
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-[#F9D2BA]/40 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-[#1D4533]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(#1D4533_1px,transparent_1px)] [background-size:24px_24px] opacity-5 pointer-events-none" />
-
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F7EAE0] text-[#5E3122] font-sans p-4 relative overflow-hidden selection:bg-[#F9D2BA] selection:text-[#5E3122] custom-scrollbar">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -317,7 +310,7 @@ export default function ResetPasswordPage() {
       >
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-2xl bg-[#1D4533] flex items-center justify-center shadow-lg shadow-[#1D4533]/20">
-            <MessageSquare className="w-6 h-6 text-[#F7EAE0]" />
+            <RelayLogo variant="shadow" bgScheme="green" size={40} />
           </div>
           <span className="text-2xl font-bold tracking-tight text-[#1D4533]">
             Relay

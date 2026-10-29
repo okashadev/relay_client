@@ -59,7 +59,6 @@ export default function UserContactProfilePanel({
 
   return (
     <div className="w-full md:w-80 h-full bg-[#F7EAE0] md:border-l border-[#1D4533]/10 flex flex-col overflow-y-auto overscroll-contain shrink-0 shadow-lg">
-      {/* Header */}
       <div className="px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] border-b border-[#1D4533]/10 flex items-center justify-between bg-[#F7EAE0]/90 backdrop-blur-md sticky top-0 z-10">
         <span className="text-xs font-bold text-[#1D4533] tracking-wide">
           Contact Info
@@ -74,7 +73,6 @@ export default function UserContactProfilePanel({
         </button>
       </div>
 
-      {/* Banner & Avatar */}
       <div className="relative bg-[#F3D7C6] border-b border-[#1D4533]/10 pb-6">
         <div className="h-20 w-full bg-[linear-gradient(to_right,#1D45330a_1px,transparent_1px),linear-gradient(to_bottom,#1D45330a_1px,transparent_1px)] bg-size-[16px_16px] relative">
           <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-[#1D4533]/10 flex items-center gap-1.5 shadow-sm">
@@ -111,7 +109,6 @@ export default function UserContactProfilePanel({
         </div>
       </div>
 
-      {/* About */}
       <div className="p-4 space-y-4">
         <div className="bg-white/80 border border-[#1D4533]/10 rounded-2xl p-4 shadow-sm space-y-3">
           <span className="text-[10px] font-bold text-[#1D4533] uppercase tracking-wider">
@@ -127,7 +124,6 @@ export default function UserContactProfilePanel({
           )}
         </div>
 
-        {/* Actions */}
         <div className="bg-white/80 border border-[#1D4533]/10 rounded-2xl shadow-sm overflow-hidden divide-y divide-[#1D4533]/10">
           {actions.map(({ key, label, icon: Icon, danger, onClick }) => (
             <button

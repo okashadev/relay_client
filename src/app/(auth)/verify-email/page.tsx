@@ -2,17 +2,12 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  MessageSquare,
-  Mail,
-  ArrowRight,
-  RefreshCw,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowRight, RefreshCw, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import RelayLogo from "@/components/common/RelayLogo";
 
 const CODE_LENGTH = 8;
 const RESEND_SECONDS = 60;
@@ -165,7 +160,6 @@ function VerifyEmailContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Server ka cooldown frontend ke timer se pehle bhi lag sakta hai
         if (res.status === 429 && data.retryAfterSeconds) {
           setTimer(data.retryAfterSeconds);
         }
@@ -198,8 +192,8 @@ function VerifyEmailContent() {
         className="w-full max-w-md bg-[#F7EAE0]/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-[#5E3122]/10 shadow-2xl shadow-[#5E3122]/10 relative z-10"
       >
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#1D4533] flex items-center justify-center shadow-lg shadow-[#1D4533]/20">
-            <MessageSquare className="w-6 h-6 text-[#F7EAE0]" />
+          <div className="w-10 h-10 rounded-2xl bg-[#1D4533] flex items-center justify-center shadow-lg shadow-[#1D4533]/20">
+            <RelayLogo bgScheme="green" variant="shadow" size={40} />
           </div>
           <span className="text-2xl font-bold tracking-tight text-[#1D4533]">
             Relay
@@ -208,11 +202,7 @@ function VerifyEmailContent() {
 
         {!isSuccess ? (
           <>
-            {/* Title & Icon */}
             <div className="text-center space-y-2 mb-8">
-              <div className="w-14 h-14 bg-[#F9D2BA]/50 text-[#1D4533] rounded-2xl mx-auto flex items-center justify-center mb-4 border border-[#5E3122]/10 shadow-sm">
-                <Mail className="w-7 h-7" />
-              </div>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#1D4533]">
                 Verify Your Email
               </h1>
@@ -302,8 +292,8 @@ function VerifyEmailContent() {
               Email Verified!
             </h2>
             <p className="text-xs sm:text-sm text-[#5E3122]/80 leading-relaxed">
-              Your email address has been successfully verified. You can now
-              access your Relay dashboard.
+              Your email has been verified successfully! You&apos;re all set to start
+              chatting with your friends and family.
             </p>
 
             <div className="pt-4">

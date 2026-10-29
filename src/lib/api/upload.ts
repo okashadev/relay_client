@@ -1,32 +1,29 @@
 import { apiRequest } from "@/lib/api/apiRequest";
+import { ChatUploadKind, SignedUpload, StoryUploadKind, UploadSource } from "@/types/uploads";
 
-export type UploadKind = "IMAGE" | "VIDEO" | "VOICE" | "FILE";
-
-export type UploadSource = { name: string; type: string; size: number };
-
-export type SignedUpload = {
-  url: string;
-  publicId: string;
-  fields: Record<string, string | number>;
-  maxBytes: number;
-};
-
-export const signUpload = async (kind: UploadKind, source: UploadSource) => {
-  const data = await apiRequest<{ upload: SignedUpload }>(
-    "/api/uploads/chat/sign",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        kind,
-        fileName: source.name,
-        mimeType: source.type,
-        size: source.size,
-      }),
-    },
-  );
+const requestSignedUpload = async (
+  endpoint: string,
+  kind: ChatUploadKind | StoryUploadKind,
+  source: UploadSource,
+) => {
+  const data = await apiRequest<{ upload: SignedUpload }>(endpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      kind,
+      fileName: source.name,
+      mimeType: source.type,
+      size: source.size,
+    }),
+  });
 
   return data.upload;
 };
+
+export const signUpload = (kind: ChatUploadKind, source: UploadSource) =>
+  requestSignedUpload("/api/uploads/chat/sign", kind, source);
+
+export const signStoryUpload = (kind: StoryUploadKind, source: UploadSource) =>
+  requestSignedUpload("/api/uploads/story/sign", kind, source);
 
 export const uploadToCloudinary = (
   file: Blob,
@@ -38,6 +35,23 @@ export const uploadToCloudinary = (
 ) =>
   new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    const { signal } = options;
+
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+
+    const cleanup = () => {
+      signal?.removeEventListener("abort", handleAbort);
+      xhr.upload.onprogress = null;
+      xhr.onload = null;
+      xhr.onerror = null;
+      xhr.onabort = null;
+    };
+
+    const handleAbort = () => xhr.abort();
+
     xhr.open("POST", upload.url);
 
     xhr.upload.onprogress = (event) => {
@@ -47,27 +61,41 @@ export const uploadToCloudinary = (
     };
 
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      if (xhr.status >= 200 && xhr.status < 300) {
+        cleanup();
+        resolve();
+        return;
+      }
 
       let message = "Upload failed. Please try again.";
+
       try {
         message = JSON.parse(xhr.responseText)?.error?.message ?? message;
-      } catch {}
+      } catch {
+      }
+
+      cleanup();
       reject(new Error(message));
     };
 
-    xhr.onerror = () =>
+    xhr.onerror = () => {
+      cleanup();
       reject(new Error("Upload failed. Check your connection."));
-    xhr.onabort = () => reject(new DOMException("Aborted", "AbortError"));
+    };
 
-    options.signal?.addEventListener("abort", () => xhr.abort(), {
-      once: true,
-    });
+    xhr.onabort = () => {
+      cleanup();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    signal?.addEventListener("abort", handleAbort, { once: true });
 
     const form = new FormData();
-    Object.entries(upload.fields).forEach(([key, value]) =>
-      form.append(key, String(value)),
-    );
+
+    Object.entries(upload.fields).forEach(([key, value]) => {
+      form.append(key, String(value));
+    });
+
     form.append("file", file);
 
     xhr.send(form);

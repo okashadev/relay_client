@@ -72,3 +72,12 @@ export const formatDuration = (totalSeconds: number) => {
 
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 };
+
+export const formatStoryAge = (iso: string) => {
+  const minutes = Math.floor((Date.now() - Date.parse(iso)) / 60_000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+
+  return `${Math.floor(minutes / 60)}h ago`;
+};

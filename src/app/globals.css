@@ -196,10 +196,9 @@ body {
   }
 }
 
-
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #1D4533 transparent;
+  scrollbar-color: #1d4533 transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -223,4 +222,13 @@ body {
   height: 100dvh;
   height: var(--app-height, 100dvh);
   overscroll-behavior: none;
+}
+
+@keyframes story-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }

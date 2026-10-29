@@ -17,6 +17,7 @@ const EMPTY_MESSAGE: ChatMessage = {
   mediaHeight: null,
   mediaDuration: null,
   replyTo: null,
+  story: null,
   reactions: [],
   editedAt: null,
   deletedAt: null,

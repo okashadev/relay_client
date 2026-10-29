@@ -1,15 +1,13 @@
 "use client";
-
-import React from "react";
 import { motion } from "framer-motion";
-import { MessageSquare, Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap } from "lucide-react";
+import RelayLogo from "../common/RelayLogo";
 
 export default function EmptyState() {
   return (
     <div className="flex-1 min-w-0 h-full bg-[#F7EAE0]/50 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden select-none">
-      {/* Background Decorative Glows */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-[#F9D2BA]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(#1D4533_1px,transparent_1px)] [background-size:24px_24px] opacity-5 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-112.5 h-112.5 bg-[#F9D2BA]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#1D4533_1px,transparent_1px)] bg-size-[24px_24px] opacity-5 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -18,7 +16,7 @@ export default function EmptyState() {
         className="relative z-10 max-w-sm flex flex-col items-center space-y-5"
       >
         <div className="w-20 h-20 rounded-3xl bg-[#1D4533] flex items-center justify-center shadow-xl shadow-[#1D4533]/20 text-[#F9D2BA] relative">
-          <MessageSquare className="w-9 h-9" />
+          <RelayLogo variant="shadow" size={60} />
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}

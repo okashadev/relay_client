@@ -1,15 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MessageSquare, Settings, UserPlus, Bell } from "lucide-react";
+import { MessageSquare, UserPlus, Bell } from "lucide-react";
 import { MdWebStories } from "react-icons/md";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutUser } from "@/lib/api/api";
 import { useAuthStore } from "@/store/authStore";
 import NotificationBadge from "@/components/notifications/NotificationBadge";
-import UserAvatar from "@/components/common/UserAvatar";
 import { useChatList } from "@/hooks/useChatList";
+import RelayLogo from "../common/RelayLogo";
+import ProfileDropdownMenu from "./ProfileDropdownMenu";
 
 const navItems = [
   { id: "Chats", icon: MessageSquare, label: "Chats", href: "/app" },
@@ -49,7 +50,7 @@ export default function AppSidebar() {
           whileTap={{ scale: 0.95 }}
           className="hidden md:flex w-10 h-10 rounded-2xl bg-[#1D4533] items-center justify-center text-[#F9D2BA] shadow-md shadow-[#1D4533]/20"
         >
-          <MessageSquare className="w-5 h-5 fill-current" />
+          <RelayLogo variant="shadow" bgScheme="green" />
         </motion.div>
 
         <nav
@@ -100,21 +101,7 @@ export default function AppSidebar() {
 
       <div className="flex items-center gap-1 md:flex-col md:gap-4">
         <div className="relative">
-          <button
-            type="button"
-            onClick={logoutUser}
-            aria-label="Log out"
-            title="Log out"
-            className="block rounded-2xl cursor-pointer"
-          >
-            <UserAvatar
-              name={user?.name ?? "?"}
-              avatar={user?.avatar ?? null}
-              className="w-10 h-10 rounded-2xl"
-              textClassName="text-xs"
-            />
-          </button>
-          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#F7EAE0] rounded-full pointer-events-none" />
+          <ProfileDropdownMenu logoutUser={logoutUser} user={user} />
         </div>
       </div>
     </aside>

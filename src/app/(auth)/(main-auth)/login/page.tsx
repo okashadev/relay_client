@@ -12,7 +12,6 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  MessageSquare,
 } from "lucide-react";
 import { LoginFormValues, loginSchema } from "@/validators/auth";
 import { useRouter } from "next/navigation";
@@ -20,6 +19,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 import { getRedirectTarget } from "@/lib/redirect";
+import RelayLogo from "@/components/common/RelayLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,17 +91,15 @@ export default function LoginPage() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full space-y-6 max-w-md mx-auto"
     >
-      {/* Mobile Branding Header */}
       <div className="flex lg:hidden items-center justify-center gap-2.5 mb-2">
         <div className="w-9 h-9 rounded-xl bg-[#1D4533] flex items-center justify-center shadow-md">
-          <MessageSquare className="w-4 h-4 text-[#F9D2BA]" />
+          <RelayLogo size={40} variant="shadow" />
         </div>
         <span className="text-xl font-bold tracking-tight text-[#1D4533]">
           Relay
         </span>
       </div>
 
-      {/* Title & Description */}
       <div className="text-center lg:text-left space-y-1.5">
         <h1 className="text-2xl font-extrabold text-[#1D4533] tracking-tight">
           Welcome back
@@ -111,9 +109,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Main Login Form Box */}
       <div className="bg-[#F7EAE0]/80 backdrop-blur-md rounded-2xl border border-[#1D4533]/10 p-6 sm:p-7 shadow-xl shadow-[#1D4533]/5 relative overflow-hidden">
-        {/* Subtle Accent Glow */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#F9D2BA]/30 rounded-full blur-2xl pointer-events-none" />
 
         {serverError && (
@@ -126,7 +122,6 @@ export default function LoginPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4 relative z-10"
         >
-          {/* Email Input */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[#1D4533] block">
               Email Address
@@ -147,7 +142,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Password Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-[#1D4533]">
@@ -187,7 +181,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Submit Button */}
           <motion.button
             type="submit"
             whileHover={{ scale: 1.01 }}
@@ -209,7 +202,6 @@ export default function LoginPage() {
           </motion.button>
         </form>
 
-        {/* Divider */}
         <div className="relative my-6 flex items-center justify-center">
           <div className="w-full border-t border-[#1D4533]/15" />
           <span className="absolute bg-[#F7EAE0] px-3 text-[10px] font-bold text-[#5E3122]/60 uppercase tracking-wider">
@@ -219,7 +211,6 @@ export default function LoginPage() {
 
         <GoogleAuthButton onError={setServerError} />
 
-        {/* Register Link */}
         <div className="mt-6 pt-4 border-t border-[#1D4533]/10 text-center text-xs text-[#5E3122]/70">
           Don't have an account?{" "}
           <Link
