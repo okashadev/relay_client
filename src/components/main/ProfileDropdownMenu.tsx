@@ -112,30 +112,6 @@ export default function ProfileDropdownMenu({
                   whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => {
-                    router.push("/profile");
-                    setIsOpen(false);
-                  }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-[#1D4533] transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <User
-                      size={16}
-                      strokeWidth={2.2}
-                      className="text-[#1D4533]/80"
-                    />
-                    <span>Profile</span>
-                  </div>
-                  <ChevronRight size={14} className="text-[#1D4533]/40" />
-                </motion.button>
-
-                <motion.button
-                  whileHover={{
-                    x: 3,
-                    backgroundColor: "rgba(29, 69, 51, 0.08)",
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  onClick={() => {
                     router.push("/settings");
                     setIsOpen(false);
                   }}

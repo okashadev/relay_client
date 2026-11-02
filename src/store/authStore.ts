@@ -5,8 +5,10 @@ export type AuthUser = {
   name: string;
   username: string;
   email: string;
+  bio: string | null;
   avatar?: string | null;
   isEmailVerified: boolean;
+  provider: "LOCAL" | "GOOGLE";
 };
 
 type AuthState = {
