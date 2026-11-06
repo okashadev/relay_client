@@ -1,5 +1,6 @@
 "use client";
 
+import { deviceBody, saveDeviceId } from "@/lib/device";
 import { getRedirectTarget } from "@/lib/redirect";
 import { useAuthStore } from "@/store/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -27,7 +28,7 @@ const GoogleAuthButton = ({
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+          body: JSON.stringify({ code, ...deviceBody() }),
         });
 
         const data = await res.json();
@@ -44,6 +45,7 @@ const GoogleAuthButton = ({
           return;
         }
 
+        saveDeviceId(data.deviceId);
         setAuth(data.token, data.user);
         toast.success("Login successful!");
         router.push(getRedirectTarget());

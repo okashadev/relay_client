@@ -57,9 +57,12 @@ export const addMembers = (id: string, memberIds: string[]) =>
 
 export const removeMember = (id: string, memberId: string) =>
   apiRequest<{ success: true }>(
-    `${groupPath(id)}/members/${encodeURIComponent(memberId)}`,
-    { method: "DELETE" },
+    `${groupPath(id)}/members/${encodeURIComponent(memberId)}/remove`,
+    { method: "POST" },
   );
+
+export const leaveGroup = (id: string) =>
+  apiRequest<{ success: true }>(`${groupPath(id)}/leave`, { method: "POST" });
 
 export const setMemberRole = (
   id: string,
@@ -70,6 +73,3 @@ export const setMemberRole = (
     `${groupPath(id)}/members/${encodeURIComponent(memberId)}/role`,
     { method: "PATCH", body: JSON.stringify({ role }) },
   );
-
-export const leaveGroup = (id: string) =>
-  apiRequest<{ success: true }>(`${groupPath(id)}/leave`, { method: "POST" });

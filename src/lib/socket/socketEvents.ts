@@ -15,6 +15,7 @@ export const SOCKET_EVENTS = {
   CONVERSATION_CLEARED: "conversation:cleared",
   BLOCK_UPDATED: "block:updated",
   GROUP_UPDATED: "group:updated",
+  DEVICE_REVOKED: "device:revoked",
 } as const;
 
 export const CLIENT_EVENTS = {
@@ -72,3 +73,4 @@ export type ConversationSettingsPayload = {
 export type ConversationClearedPayload = { conversationId: string };
 export type BlockUpdatedPayload = { userId: string; blocked: boolean };
 export type GroupUpdatedPayload = { conversationId: string };
+export type DeviceRevokedPayload = { deviceIds: string[] };

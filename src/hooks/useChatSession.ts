@@ -110,8 +110,13 @@ export function useChatSession({
     async (text: string) => {
       if (!editing) return;
 
+      const target = messagesState.messages.find(
+        (item) => item.id === editing.id,
+      );
+      if (!target) return;
+
       try {
-        await edit(editing.id, text);
+        await edit(target, text);
         setEditing(null);
       } catch (error) {
         toast.error(

@@ -6,8 +6,10 @@ import {
   ChevronRight,
   Image as ImageIcon,
   KeyRound,
+  LockKeyhole,
   Mail,
   ShieldBan,
+  Smartphone,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +22,13 @@ type Row = {
   icon: LucideIcon;
   title: string;
   description: string;
+};
+
+const PROFILE: Row = {
+  href: "/settings/profile",
+  icon: UserRound,
+  title: "Profile",
+  description: "Manage your profile  details.",
 };
 
 const PASSWORD: Row = {
@@ -48,6 +57,20 @@ const EMAIL: Row = {
   icon: Mail,
   title: "Email address",
   description: "Change the email you sign in with",
+};
+
+const ENCRYPTION: Row = {
+  href: "/settings/encryption",
+  icon: LockKeyhole,
+  title: "Chat privacy",
+  description: "Passphrase protection for your chat history",
+};
+
+const DEVICES: Row = {
+  href: "/settings/devices",
+  icon: Smartphone,
+  title: "Devices",
+  description: "Where you're signed in",
 };
 
 const container = {
@@ -99,6 +122,8 @@ export default function SettingsPage() {
     {
       title: "Account",
       rows: [
+        PROFILE,
+        DEVICES,
         ...(isLocal
           ? [
               { ...EMAIL, description: user?.email ?? EMAIL.description },
@@ -107,8 +132,14 @@ export default function SettingsPage() {
           : []),
       ],
     },
-    { title: "Privacy", rows: [BLOCKED] },
-    { title: "Data", rows: [MEDIA] },
+    {
+      title: "Data",
+      rows: [MEDIA],
+    },
+    {
+      title: "Privacy",
+      rows: [ENCRYPTION, BLOCKED],
+    },
   ];
 
   return (

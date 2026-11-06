@@ -20,6 +20,11 @@ type ChatListState = {
   markRead: (conversationId: string) => void;
   applyMessage: (conversationId: string, update: MessageUpdate) => boolean;
   applyMessageUpdate: (conversationId: string, message: ChatMessage) => void;
+  patchLastMessage: (
+    conversationId: string,
+    lastMessageAt: string,
+    patch: Partial<ChatPreviewMessage>,
+  ) => void;
   updateSettings: (
     conversationId: string,
     settings: Partial<ChatSettings>,
@@ -100,6 +105,21 @@ export const useChatListStore = create<ChatListState>((set, get) => ({
         ),
       };
     }),
+
+  patchLastMessage: (conversationId, lastMessageAt, patch) =>
+    set((state) =>
+      state.chats
+        ? {
+            chats: state.chats.map((chat) =>
+              chat.id === conversationId &&
+              chat.lastMessage &&
+              chat.lastMessageAt === lastMessageAt
+                ? { ...chat, lastMessage: { ...chat.lastMessage, ...patch } }
+                : chat,
+            ),
+          }
+        : state,
+    ),
 
   updateSettings: (conversationId, settings) =>
     set((state) =>

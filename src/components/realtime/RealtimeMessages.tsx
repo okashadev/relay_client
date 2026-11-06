@@ -21,6 +21,8 @@ import {
   applyConversationSettings,
 } from "@/lib/chat/chatState";
 import { syncPresence } from "@/lib/presenceSync";
+import { hydrateMessage } from "@/lib/e2ee/hydrate";
+import { invalidateKeys } from "@/lib/e2ee/chatKeys";
 
 export default function RealtimeMessages() {
   const pathname = usePathname() ?? "";
@@ -29,9 +31,10 @@ export default function RealtimeMessages() {
 
   useSocketEvent<MessageNewPayload>(
     SOCKET_EVENTS.MESSAGE_NEW,
-    ({ conversationId, message }, ack) => {
+    async ({ conversationId, message }, ack) => {
       ack?.();
 
+      const hydrated = await hydrateMessage(conversationId, message);
       const chatList = useChatListStore.getState();
 
       const isMine = message.senderId === meId;
@@ -42,8 +45,8 @@ export default function RealtimeMessages() {
       const applied = chatList.applyMessage(conversationId, {
         lastMessage: {
           type: message.type,
-          content: message.content,
-          fileName: message.fileName,
+          content: hydrated.content,
+          fileName: hydrated.fileName,
           senderName: isMine ? null : (message.sender?.name ?? null),
           isMine,
           deleted: message.deletedAt !== null,
@@ -99,9 +102,13 @@ export default function RealtimeMessages() {
     },
   );
 
-  useSocketEvent<GroupUpdatedPayload>(SOCKET_EVENTS.GROUP_UPDATED, () => {
-    useChatListStore.getState().invalidate();
-  });
+  useSocketEvent<GroupUpdatedPayload>(
+    SOCKET_EVENTS.GROUP_UPDATED,
+    ({ conversationId }) => {
+      invalidateKeys(conversationId);
+      useChatListStore.getState().invalidate();
+    },
+  );
 
   return null;
 }

@@ -5,6 +5,7 @@ import type {
   StoryViewerEntry,
 } from "@/types/story";
 import { apiRequest } from "./apiRequest";
+import { KeyBundle } from "@/types/e2ee";
 
 export type CreateStoryBody =
   | {
@@ -60,7 +61,13 @@ export const deleteStory = (storyId: string) =>
 
 export const replyToStory = (
   storyId: string,
-  body: { clientId: string; content: string },
+  body: {
+    clientId: string;
+    ciphertext: string;
+    keyEpoch: number;
+    deviceId: string;
+    keyBundle?: KeyBundle;
+  },
 ) =>
   apiRequest<{ conversationId: string; message: ChatMessage }>(
     `${storyPath(storyId)}/reply`,

@@ -22,6 +22,7 @@ import type { ChatPreview } from "@/types/chat";
 import NewChatDropdownButton from "../chats/NewChatDropdownButton";
 import { useChatSearch } from "@/hooks/useChatSearch";
 import EmojiText from "@/components/chats/shared/EmojiText";
+import HistoryLockBanner from "../e2ee/HistoryLockBanner";
 
 type FilterTab = "All" | "Direct" | "Groups" | "Archive";
 
@@ -35,6 +36,8 @@ const previewText = (chat: ChatPreview) => {
 
   if (last.deleted) {
     body = "This message was deleted";
+  } else if (last.decryptFailed) {
+    body = "🔒 Message unavailable";
   } else {
     switch (last.type) {
       case "IMAGE":
@@ -50,7 +53,7 @@ const previewText = (chat: ChatPreview) => {
         body = last.fileName ?? "File";
         break;
       default:
-        body = last.content ?? "";
+        body = last.content ?? (last.ciphertext ? "🔒 Encrypted message" : "");
     }
   }
 
@@ -387,6 +390,7 @@ export default function ChatList({
             );
           })}
         </div>
+        <HistoryLockBanner />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2 space-y-1.5 custom-scrollbar">

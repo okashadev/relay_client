@@ -9,6 +9,7 @@ import {
   Copy,
   Download,
   FileText,
+  Loader2,
   MoreVertical,
   Pencil,
   Reply,
@@ -29,11 +30,31 @@ import type { MessageTick } from "@/lib/chat/receipts";
 import type { ChatMessage } from "@/types/chat";
 import EmojiText, { isJumboEmoji } from "@/components/chats/shared/EmojiText";
 import StoryQuote from "@/components/chats/shared/StoryQuote";
+import { downloadDecrypted } from "@/lib/e2ee/media";
+import { useMediaSource } from "@/hooks/useMediaSource";
+import { useE2eeStore } from "@/store/e2eeStore";
 
 const aspectStyle = (message: ChatMessage) =>
   message.mediaWidth && message.mediaHeight
     ? { aspectRatio: `${message.mediaWidth} / ${message.mediaHeight}` }
     : undefined;
+
+function MediaPlaceholder({
+  message,
+  failed,
+}: {
+  message: ChatMessage;
+  failed: boolean;
+}) {
+  return (
+    <div
+      style={aspectStyle(message)}
+      className="w-full min-h-32 max-h-80 rounded-xl bg-[#1D4533]/10 flex items-center justify-center text-[11px] font-semibold opacity-70"
+    >
+      {failed ? "Couldn't load" : <Loader2 className="w-5 h-5 animate-spin" />}
+    </div>
+  );
+}
 
 function MessageContent({
   message,
@@ -45,7 +66,16 @@ function MessageContent({
   jumbo?: boolean;
 }) {
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [thumbFailed, setThumbFailed] = useState(false);
+
+  const thumb = useMediaSource(message, "auto");
+  const full = useMediaSource(
+    message,
+    "full",
+    message.type === "VIDEO" || message.type === "VOICE" || viewerOpen,
+  );
+  const locked = useE2eeStore(
+    (state) => state.mode === "PASSPHRASE" && !state.unlocked,
+  );
 
   if (message.deletedAt) {
     return (
@@ -56,7 +86,18 @@ function MessageContent({
     );
   }
 
+  if (message.decryptFailed) {
+    return (
+      <p className="italic opacity-70">
+        {locked
+          ? "🔒 Locked. Unlock your history to read this."
+          : "🔒 Couldn't decrypt this message"}
+      </p>
+    );
+  }
+
   const textClass = "font-medium whitespace-pre-wrap [overflow-wrap:anywhere]";
+
   const caption = message.content ? (
     <p className={textClass}>
       <EmojiText text={message.content} />
@@ -65,15 +106,12 @@ function MessageContent({
 
   switch (message.type) {
     case "IMAGE": {
-      const src = thumbFailed
-        ? message.mediaUrl
-        : (message.thumbnailUrl ?? message.mediaUrl);
       const extension =
         message.mediaMimeType?.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
 
       return (
         <div className="space-y-2">
-          {src && (
+          {thumb.src ? (
             <button
               type="button"
               onClick={() => setViewerOpen(true)}
@@ -81,19 +119,22 @@ function MessageContent({
               className="block w-full cursor-zoom-in"
             >
               <img
-                src={src}
+                src={thumb.src}
                 alt={message.content ?? "Photo"}
                 loading="lazy"
-                onError={() => setThumbFailed(true)}
                 style={aspectStyle(message)}
                 className="w-full max-h-80 rounded-xl object-cover bg-[#1D4533]/10"
               />
             </button>
+          ) : (
+            <MediaPlaceholder message={message} failed={thumb.failed} />
           )}
+
           {caption}
-          {viewerOpen && message.mediaUrl && (
+
+          {viewerOpen && (full.src ?? thumb.src) && (
             <MediaViewer
-              src={message.mediaUrl}
+              src={(full.src ?? thumb.src) as string}
               alt={message.content ?? "Photo"}
               fileName={`photo.${extension}`}
               onClose={() => setViewerOpen(false)}
@@ -106,29 +147,35 @@ function MessageContent({
     case "VIDEO":
       return (
         <div className="space-y-2">
-          {message.mediaUrl && (
+          {full.src ? (
             <video
-              src={message.mediaUrl}
-              poster={message.thumbnailUrl ?? undefined}
+              src={full.src}
               controls
               playsInline
               preload="metadata"
               style={aspectStyle(message)}
               className="w-full max-h-80 rounded-xl bg-black"
             />
+          ) : (
+            <MediaPlaceholder message={message} failed={full.failed} />
           )}
+
           {caption}
         </div>
       );
 
     case "VOICE":
-      return message.mediaUrl ? (
+      return full.src ? (
         <VoicePlayer
-          src={message.mediaUrl}
+          src={full.src}
           durationHint={message.mediaDuration}
           isMine={isMine}
         />
-      ) : null;
+      ) : (
+        <p className="text-[11px] opacity-70">
+          {full.failed ? "Couldn't load" : "Loading voice message…"}
+        </p>
+      );
 
     case "FILE": {
       const label = message.fileName ?? "Attachment";
@@ -146,6 +193,7 @@ function MessageContent({
               <div className="w-9 h-9 rounded-lg bg-[#1D4533] text-[#F9D2BA] flex items-center justify-center shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
+
               <div className="min-w-0">
                 <p
                   className={`font-bold text-xs truncate ${
@@ -154,17 +202,25 @@ function MessageContent({
                 >
                   {label}
                 </p>
+
                 {message.mediaSize ? (
                   <p className="text-[10px] opacity-60">
-                    {formatFileSize(message.mediaSize)}
+                    {formatFileSize(
+                      message.payload?.file?.size ?? message.mediaSize,
+                    )}
                   </p>
                 ) : null}
               </div>
             </div>
+
             {message.mediaUrl && !message.status && (
               <button
                 type="button"
-                onClick={() => downloadFile(message.mediaUrl as string, label)}
+                onClick={() =>
+                  downloadDecrypted(message, label).catch((e) =>
+                    toast.error(e.message),
+                  )
+                }
                 aria-label={`Download ${label}`}
                 className="w-8 h-8 rounded-lg bg-[#1D4533]/10 hover:bg-[#1D4533] hover:text-[#F9D2BA] transition-colors flex items-center justify-center shrink-0 cursor-pointer"
               >
@@ -172,6 +228,7 @@ function MessageContent({
               </button>
             )}
           </div>
+
           {caption}
         </div>
       );

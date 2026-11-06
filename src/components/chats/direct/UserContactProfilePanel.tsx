@@ -1,6 +1,13 @@
 "use client";
 
-import { Ban, BellOff, CheckCircle2, Trash2, X } from "lucide-react";
+import {
+  Ban,
+  BellOff,
+  CheckCircle2,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
 import UserAvatar from "@/components/common/UserAvatar";
 import { formatLastSeen } from "@/lib/format";
 import type { ChatUser } from "@/types/chat";
@@ -14,6 +21,7 @@ interface UserContactProfilePanelProps {
   onMute?: () => void;
   onClearChat?: () => void;
   onBlock?: () => void;
+  onVerify?: () => void;
 }
 
 export default function UserContactProfilePanel({
@@ -22,6 +30,7 @@ export default function UserContactProfilePanel({
   onMute,
   onClearChat,
   onBlock,
+  onVerify,
   isMuted = false,
   isBlocked = false,
 }: UserContactProfilePanelProps) {
@@ -54,6 +63,13 @@ export default function UserContactProfilePanel({
       icon: Ban,
       danger: !isBlocked,
       onClick: onBlock,
+    },
+    {
+      key: "verify",
+      label: "Verify security code",
+      icon: ShieldCheck,
+      danger: false,
+      onClick: onVerify,
     },
   ];
 

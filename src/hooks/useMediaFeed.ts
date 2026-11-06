@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getMedia, type MediaKindFilter } from "@/lib/api/mediaApi";
 import type { MediaItem } from "@/types/media";
+import { hydrateMediaItems } from "@/lib/e2ee/hydrate";
 
 type Feed = { key: string; items: MediaItem[]; nextCursor: string | null };
 
 const toMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong.";
 
-export function useMediaFeed(kind: MediaKindFilter, conversationId: string | null) {
+export function useMediaFeed(
+  kind: MediaKindFilter,
+  conversationId: string | null,
+) {
   const key = `${kind}:${conversationId ?? "all"}`;
 
   const [feed, setFeed] = useState<Feed | null>(null);
-  const [error, setError] = useState<{ key: string; message: string } | null>(null);
+  const [error, setError] = useState<{ key: string; message: string } | null>(
+    null,
+  );
   const [loadingMore, setLoadingMore] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -28,8 +34,12 @@ export function useMediaFeed(kind: MediaKindFilter, conversationId: string | nul
     const controller = new AbortController();
 
     getMedia({ kind, conversationId }, controller.signal)
-      .then((page) => {
-        setFeed({ key, items: page.items, nextCursor: page.nextCursor });
+      .then(async (page) => {
+        const items = await hydrateMediaItems(page.items);
+
+        if (controller.signal.aborted) return;
+
+        setFeed({ key, items, nextCursor: page.nextCursor });
         setError(null);
       })
       .catch((err) => {
@@ -50,7 +60,13 @@ export function useMediaFeed(kind: MediaKindFilter, conversationId: string | nul
     setLoadingMore(true);
 
     try {
-      const page = await getMedia({ kind, conversationId, cursor: current.nextCursor });
+      const page = await getMedia({
+        kind,
+        conversationId,
+        cursor: current.nextCursor,
+      });
+
+      const items = await hydrateMediaItems(page.items);
 
       if (keyRef.current !== key) return;
 
@@ -61,7 +77,10 @@ export function useMediaFeed(kind: MediaKindFilter, conversationId: string | nul
 
         return {
           key,
-          items: [...previous.items, ...page.items.filter((item) => !seen.has(item.id))],
+          items: [
+            ...previous.items,
+            ...items.filter((item) => !seen.has(item.id)),
+          ],
           nextCursor: page.nextCursor,
         };
       });
@@ -81,7 +100,10 @@ export function useMediaFeed(kind: MediaKindFilter, conversationId: string | nul
   const remove = useCallback((id: string) => {
     setFeed((previous) =>
       previous
-        ? { ...previous, items: previous.items.filter((item) => item.id !== id) }
+        ? {
+            ...previous,
+            items: previous.items.filter((item) => item.id !== id),
+          }
         : previous,
     );
   }, []);

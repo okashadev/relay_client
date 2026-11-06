@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getConversations } from "@/lib/api/ChatApi";
 import { useChatListStore } from "@/store/chatListStore";
+import { hydrateChats } from "@/lib/e2ee/hydrate";
 
 const STALE_AFTER_MS = 30_000;
 
@@ -26,6 +27,9 @@ export function useChatList() {
     try {
       const result = await getConversations(controller.signal);
       setChats(result);
+      void hydrateChats(result, (id, at, patch) =>
+        useChatListStore.getState().patchLastMessage(id, at, patch),
+      );
       lastFetchedAt.current = Date.now();
     } catch (err) {
       if (controller.signal.aborted) return;

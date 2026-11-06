@@ -5,14 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { LoginFormValues, loginSchema } from "@/validators/auth";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,6 +13,7 @@ import { useAuthStore } from "@/store/authStore";
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 import { getRedirectTarget } from "@/lib/redirect";
 import RelayLogo from "@/components/common/RelayLogo";
+import { deviceBody, saveDeviceId } from "@/lib/device";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,12 +45,10 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, ...deviceBody() }),
       });
 
       const resData = await res.json();
-
-      console.log(resData);
 
       if (!res.ok) {
         if (resData.code === "EMAIL_NOT_VERIFIED") {
@@ -73,6 +65,7 @@ export default function LoginPage() {
       }
 
       if (resData.success) {
+        saveDeviceId(resData.deviceId);
         setAuth(resData.token, resData.user);
         toast.success("Login successfull!");
         router.push(getRedirectTarget());

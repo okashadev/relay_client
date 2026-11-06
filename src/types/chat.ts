@@ -1,3 +1,5 @@
+import { MessagePayload } from "./e2ee";
+
 export type PresenceStatus = "ONLINE" | "OFFLINE";
 export type ConversationType = "DIRECT" | "GROUP";
 export type ParticipantRole = "OWNER" | "ADMIN" | "MEMBER";
@@ -24,6 +26,7 @@ export type ChatUser = {
   username: string;
   avatar: string | null;
   bio: string | null;
+  accountPublicKey?: string | null;
   status: PresenceStatus;
   lastSeen: string | null;
 };
@@ -37,6 +40,9 @@ export type ChatSender = {
 
 export type ChatPreviewMessage = {
   type: MessageType;
+  ciphertext?: string | null;
+  keyEpoch?: number | null;
+  decryptFailed?: boolean;
   content: string | null;
   fileName: string | null;
   senderName: string | null;
@@ -83,6 +89,8 @@ export type ChatMessage = {
   senderId: string | null;
   sender?: ChatSender | null;
   type: MessageType;
+  ciphertext?: string | null;
+  keyEpoch?: number | null;
   content: string | null;
   mediaUrl: string | null;
   fileName: string | null;
@@ -92,8 +100,12 @@ export type ChatMessage = {
   thumbnailUrl: string | null;
   mediaMimeType: string | null;
   mediaDuration: number | null;
+  payload?: MessagePayload | null;
+  decryptFailed?: boolean;
   replyTo: {
     id: string;
+    ciphertext?: string | null;
+    keyEpoch?: number | null;
     content: string | null;
     senderName: string | null;
     type: MessageType;

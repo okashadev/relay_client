@@ -1,4 +1,4 @@
-export type ChatUploadKind = "IMAGE" | "VIDEO" | "VOICE" | "FILE";
+export type ChatUploadKind = "IMAGE" | "VIDEO" | "VOICE" | "FILE" | "THUMB";
 export type StoryUploadKind = "IMAGE" | "VIDEO";
 
 export type UploadSource = {

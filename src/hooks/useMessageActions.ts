@@ -12,6 +12,10 @@ import {
 import { applyMyReaction } from "@/lib/chat/reactions";
 import { useChatListStore } from "@/store/chatListStore";
 import type { ChatMessage } from "@/types/chat";
+import { MessagePayload } from "@/types/e2ee";
+import { hydrateMessage } from "@/lib/e2ee/hydrate";
+import { getKeyForEpoch } from "@/lib/e2ee/chatKeys";
+import { encryptPayload } from "@/lib/e2ee/primitives";
 
 export function useMessageActions({
   conversationId,
@@ -24,12 +28,17 @@ export function useMessageActions({
 
   const react = useCallback(
     async (message: ChatMessage, emoji: string) => {
-      const current = message.reactions.find((item) => item.reactedByMe)?.emoji ?? null;
+      const current =
+        message.reactions.find((item) => item.reactedByMe)?.emoji ?? null;
       const removing = current === emoji;
 
       replaceMessage({
         ...message,
-        reactions: applyMyReaction(message.reactions, current, removing ? null : emoji),
+        reactions: applyMyReaction(
+          message.reactions,
+          current,
+          removing ? null : emoji,
+        ),
       });
 
       try {
@@ -47,11 +56,27 @@ export function useMessageActions({
     [conversationId, replaceMessage],
   );
 
-  // Error caller ko jata hai: composer edit mode mein rehta hai
   const edit = useCallback(
-    async (messageId: string, content: string) => {
-      const { message } = await editMessage(conversationId, messageId, content);
-      replaceMessage(message);
+    async (message: ChatMessage, text: string) => {
+      const epoch = message.keyEpoch;
+      if (!epoch) throw new Error("This message can't be edited.");
+
+      const key = await getKeyForEpoch(conversationId, epoch);
+      const payload: MessagePayload = {
+        ...(message.payload ?? { v: 1 }),
+        text: text || undefined,
+      };
+
+      const { message: updated } = await editMessage(
+        conversationId,
+        message.id,
+        {
+          ciphertext: encryptPayload(key, conversationId, epoch, payload),
+          keyEpoch: epoch,
+        },
+      );
+
+      replaceMessage(await hydrateMessage(conversationId, updated));
     },
     [conversationId, replaceMessage],
   );

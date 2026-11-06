@@ -5,6 +5,23 @@ import { Play } from "lucide-react";
 import { formatDuration } from "@/lib/format";
 import { groupByMonth, senderLabel } from "@/lib/mediaGallery";
 import type { MediaItem } from "@/types/media";
+import { useMediaSource } from "@/hooks/useMediaSource";
+
+function GridImage({ item }: { item: MediaItem }) {
+  const { src } = useMediaSource(item, "auto");
+
+  // eslint-disable-next-line @next/next/no-img-element
+  return src ? (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      className="h-full w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
+    />
+  ) : null;
+}
 
 export default function MediaGrid({
   items,
@@ -41,15 +58,7 @@ export default function MediaGrid({
                   aria-label={`${isVideo ? "Video" : "Photo"} from ${senderLabel(item, meId)} in ${item.conversationName}`}
                   className="group relative aspect-square overflow-hidden rounded-lg sm:rounded-xl bg-[#1D4533]/10 cursor-pointer transition-transform active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4533]"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.thumbnailUrl ?? item.mediaUrl}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                    className="h-full w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
-                  />
+                  <GridImage item={item} />
 
                   {isVideo && (
                     <>

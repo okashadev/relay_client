@@ -7,35 +7,18 @@ import {
   PresenceStatus,
 } from "@/types/chat";
 import { apiRequest } from "@/lib/api/apiRequest";
+import { KeyBundle } from "@/types/e2ee";
 
-export type SendMessageBody =
-  | {
-      type: "TEXT";
-      clientId: string;
-      content: string;
-      replyToId?: string | null;
-    }
-  | {
-      type: "IMAGE" | "VIDEO";
-      clientId: string;
-      publicId: string;
-      content?: string | null;
-      replyToId?: string | null;
-    }
-  | {
-      type: "VOICE";
-      clientId: string;
-      publicId: string;
-      replyToId?: string | null;
-    }
-  | {
-      type: "FILE";
-      clientId: string;
-      publicId: string;
-      fileName: string;
-      content?: string | null;
-      replyToId?: string | null;
-    };
+export type SendMessageBody = {
+  clientId: string;
+  type: "TEXT" | "IMAGE" | "VIDEO" | "VOICE" | "FILE";
+  ciphertext: string;
+  keyEpoch: number;
+  replyToId?: string | null;
+  deviceId: string;
+  media?: { publicId: string; thumbnailPublicId?: string };
+  keyBundle?: KeyBundle;
+};
 
 type MessagesPage = {
   items: ChatMessage[];
@@ -110,11 +93,11 @@ const messagePath = (conversationId: string, messageId: string) =>
 export const editMessage = (
   conversationId: string,
   messageId: string,
-  content: string,
+  body: { ciphertext: string; keyEpoch: number },
 ) =>
   apiRequest<{ message: ChatMessage }>(messagePath(conversationId, messageId), {
     method: "PATCH",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(body),
   });
 
 export const deleteMessage = (

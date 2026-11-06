@@ -1,3 +1,5 @@
+import { MessagePayload } from "./e2ee";
+
 export type MediaKind = "IMAGE" | "VIDEO" | "FILE";
 
 export type MediaItem = {
@@ -9,6 +11,10 @@ export type MediaItem = {
   senderName: string;
   senderAvatar: string | null;
   type: MediaKind;
+  ciphertext?: string | null;
+  keyEpoch?: number | null;
+  payload?: MessagePayload | null;
+  decryptFailed?: boolean;
   mediaUrl: string;
   thumbnailUrl: string | null;
   mediaMimeType: string;

@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import RelayLogo from "@/components/common/RelayLogo";
+import { deviceBody, saveDeviceId } from "@/lib/device";
 
 const CODE_LENGTH = 8;
 const RESEND_SECONDS = 60;
@@ -124,7 +125,7 @@ function VerifyEmailContent() {
       const res = await fetch("/api/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code, ...deviceBody() }),
       });
 
       const data = await res.json();
@@ -133,6 +134,7 @@ function VerifyEmailContent() {
         throw new Error(data.error || "Verification failed");
       }
 
+      saveDeviceId(data.deviceId);
       setAuth(data.token, data.user);
       setIsSuccess(true);
     } catch (error: any) {

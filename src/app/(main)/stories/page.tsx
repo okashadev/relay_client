@@ -20,6 +20,8 @@ import { uuid } from "@/lib/uuid";
 import { useAuthStore } from "@/store/authStore";
 import { useChatListStore } from "@/store/chatListStore";
 import type { StoryDraft, StoryOwner, StoryUserGroup } from "@/types/story";
+import { sendWithKeys } from "@/lib/e2ee/send";
+import { newChat } from "@/lib/api/ChatApi";
 
 type ViewerState = { queue: StoryUserGroup[]; startIndex: number } | null;
 
@@ -116,7 +118,12 @@ export default function StoriesPage() {
       replyIds.current.set(key, clientId);
 
       try {
-        await replyToStory(storyId, { clientId, content: text });
+        const { conversation } = await newChat(owner.id);
+
+        await sendWithKeys(
+          { conversationId: conversation.id, payload: { v: 1, text } },
+          (encrypted) => replyToStory(storyId, { clientId, ...encrypted }),
+        );
         replyIds.current.delete(key);
 
         useChatListStore.getState().invalidate();
@@ -136,7 +143,7 @@ export default function StoriesPage() {
         return false;
       }
     },
-    [reload],
+    [me.id, reload],
   );
 
   const loadViewers = useCallback(

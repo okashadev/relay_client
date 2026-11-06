@@ -8,17 +8,56 @@ import {
   Download,
   MessageSquare,
   Trash2,
+  Loader2,
   X,
 } from "lucide-react";
 import UserAvatar from "@/components/common/UserAvatar";
 import { formatMessageTime } from "@/lib/format";
 import { senderLabel } from "@/lib/mediaGallery";
 import type { MediaItem } from "@/types/media";
+import { useMediaSource } from "@/hooks/useMediaSource";
 
 const SWIPE_PX = 60;
 
 const iconButton =
   "w-10 h-10 rounded-full hover:bg-white/15 flex items-center justify-center cursor-pointer transition-colors";
+
+function ViewerMedia({ item, who }: { item: MediaItem; who: string }) {
+  const { src } = useMediaSource(item, "full");
+
+  if (!src) {
+    return (
+      <Loader2
+        className="w-8 h-8 animate-spin text-white/70"
+        aria-label="Loading media"
+      />
+    );
+  }
+
+  if (item.type === "VIDEO") {
+    return (
+      <video
+        key={item.id}
+        src={src}
+        poster={item.thumbnailUrl ?? undefined}
+        controls
+        autoPlay
+        playsInline
+        className="max-h-full max-w-full rounded-lg bg-black"
+      />
+    );
+  }
+
+  return (
+    <img
+      key={item.id}
+      src={src}
+      alt={`Photo from ${who}`}
+      draggable={false}
+      className="max-h-full max-w-full rounded-lg object-contain"
+    />
+  );
+}
 
 export default function StorageMediaViewer({
   items,
@@ -164,26 +203,7 @@ export default function StorageMediaViewer({
           }
         }}
       >
-        {isVideo ? (
-          <video
-            key={item.id}
-            src={item.mediaUrl}
-            poster={item.thumbnailUrl ?? undefined}
-            controls
-            autoPlay
-            playsInline
-            className="max-h-full max-w-full rounded-lg bg-black"
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={item.id}
-            src={item.mediaUrl}
-            alt={`Photo from ${who}`}
-            draggable={false}
-            className="max-h-full max-w-full rounded-lg object-contain"
-          />
-        )}
+        <ViewerMedia key={item.id} item={item} who={who} />
 
         {current > 0 && (
           <button

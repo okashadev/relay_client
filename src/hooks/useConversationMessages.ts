@@ -12,6 +12,8 @@ import {
   ConversationClearedPayload,
 } from "@/lib/socket/socketEvents";
 import type { ChatMessage } from "@/types/chat";
+import { hydrateMessage, hydrateMessages } from "@/lib/e2ee/hydrate";
+import { useE2eeStore } from "@/store/e2eeStore";
 
 type LoadStatus = "loading" | "ready" | "error";
 
@@ -26,6 +28,8 @@ export function useConversationMessages(conversationId: string) {
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [olderError, setOlderError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const keysVersion = useE2eeStore((state) => state.keysVersion);
+  const seenKeys = useRef(keysVersion);
 
   const loadingOlderRef = useRef(false);
   const olderController = useRef<AbortController | null>(null);
@@ -38,6 +42,12 @@ export function useConversationMessages(conversationId: string) {
   }, [messages]);
 
   useEffect(() => {
+    if (keysVersion === seenKeys.current) return;
+    seenKeys.current = keysVersion;
+    setReloadKey((key) => key + 1);
+  }, [keysVersion]);
+  
+  useEffect(() => {
     const controller = new AbortController();
 
     setStatus("loading");
@@ -45,14 +55,16 @@ export function useConversationMessages(conversationId: string) {
     setOlderError(null);
 
     getMessages(conversationId, { signal: controller.signal })
-      .then((page) => {
+      .then(async (page) => {
+        const items = await hydrateMessages(conversationId, page.items);
+        if (controller.signal.aborted) return;
         const replace = replaceOnLoad.current;
         replaceOnLoad.current = false;
 
         setMessages((previous) =>
           mergeMessages(
             replace ? previous.filter(isPendingMessage) : previous,
-            page.items,
+            items,
           ),
         );
         setNextCursor(page.nextCursor);
@@ -87,12 +99,14 @@ export function useConversationMessages(conversationId: string) {
           signal: controller.signal,
         });
 
+        const items = await hydrateMessages(conversationId, page.items);
+
         beforeApply?.();
 
         setMessages((previous) => {
           const seen = new Set(previous.map((message) => message.id));
           return [
-            ...page.items.filter((message) => !seen.has(message.id)),
+            ...items.filter((message) => !seen.has(message.id)),
             ...previous,
           ];
         });
@@ -112,9 +126,10 @@ export function useConversationMessages(conversationId: string) {
   const syncLatest = useCallback(async () => {
     try {
       const page = await getMessages(conversationId);
+      const items = await hydrateMessages(conversationId, page.items);
       const known = messagesRef.current;
 
-      const overlaps = page.items.some((item) =>
+      const overlaps = items.some((item) =>
         known.some((message) => message.id === item.id),
       );
       const hasConfirmed = known.some((message) => !isPendingMessage(message));
@@ -125,7 +140,7 @@ export function useConversationMessages(conversationId: string) {
         return;
       }
 
-      setMessages((previous) => mergeMessages(previous, page.items));
+      setMessages((previous) => mergeMessages(previous, items));
     } catch {}
   }, [conversationId]);
 
@@ -159,8 +174,9 @@ export function useConversationMessages(conversationId: string) {
 
   useSocketEvent<MessageNewPayload>(
     SOCKET_EVENTS.MESSAGE_NEW,
-    ({ conversationId: id, message }) => {
-      if (id === conversationId) upsertMessage(message);
+    async ({ conversationId: id, message }) => {
+      if (id === conversationId)
+        upsertMessage(await hydrateMessage(id, message));
     },
   );
 
@@ -190,8 +206,9 @@ export function useConversationMessages(conversationId: string) {
 
   useSocketEvent<MessageUpdatedPayload>(
     SOCKET_EVENTS.MESSAGE_UPDATED,
-    ({ conversationId: id, message }) => {
-      if (id === conversationId) replaceMessage(message);
+    async ({ conversationId: id, message }) => {
+      if (id === conversationId)
+        replaceMessage(await hydrateMessage(id, message));
     },
   );
 
@@ -202,7 +219,7 @@ export function useConversationMessages(conversationId: string) {
     },
   );
 
-   useSocketEvent<ConversationClearedPayload>(
+  useSocketEvent<ConversationClearedPayload>(
     SOCKET_EVENTS.CONVERSATION_CLEARED,
     ({ conversationId: id }) => {
       if (id !== conversationId) return;

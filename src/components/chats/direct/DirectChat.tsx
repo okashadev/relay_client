@@ -20,6 +20,8 @@ import { presenceLabel, usePresence } from "@/hooks/usePresence";
 import { useTypers } from "@/hooks/useTypers";
 import { typingLabel } from "@/lib/chat/typing";
 import type { DirectConversationDetails } from "@/types/chat";
+import SafetyNumberDialog from "./SafetyNumberDialog";
+import { useAuthStore } from "@/store/authStore";
 
 interface DirectChatProps {
   conversation: DirectConversationDetails;
@@ -34,6 +36,8 @@ export default function DirectChat({
   const session = useChatSession({ conversation, messagesState });
   const contact = conversation.otherUser;
   const { me, blockedByMe } = useChatMeta(conversation, contact.id);
+  const meId = useAuthStore((s) => s.user?.id);
+  const myPublicKey = useAuthStore((s) => s.user?.accountPublicKey);
 
   const menu = useChatMenu({
     conversationId: conversation.id,
@@ -50,6 +54,7 @@ export default function DirectChat({
 
   const [showProfile, setShowProfile] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showSafety, setShowSafety] = useState(false);
 
   const closeProfile = useCallback(() => setShowProfile(false), []);
 
@@ -180,6 +185,7 @@ export default function DirectChat({
           onClose={closeProfile}
           isMuted={me.isMuted}
           isBlocked={blockedByMe}
+          onVerify={() => setShowSafety(true)}
           onMute={() => void menu.toggleMute()}
           onClearChat={menu.requestDelete}
           onBlock={menu.requestBlock}
@@ -196,6 +202,18 @@ export default function DirectChat({
       {menu.dialogs}
       {session.deleteDialog && (
         <DeleteMessageDialog {...session.deleteDialog} />
+      )}
+
+      {showSafety && meId && contact.accountPublicKey && myPublicKey && (
+        <SafetyNumberDialog
+          me={{ id: meId, publicKey: myPublicKey }}
+          other={{
+            id: contact.id,
+            name: contact.name,
+            publicKey: contact.accountPublicKey,
+          }}
+          onClose={() => setShowSafety(false)}
+        />
       )}
     </div>
   );

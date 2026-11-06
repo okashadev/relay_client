@@ -3,19 +3,36 @@
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { ConversationMessagesState } from "@/hooks/useConversationMessages";
-import { sendMessage, type SendMessageBody } from "@/lib/api/ChatApi";
+import { sendMessage } from "@/lib/api/ChatApi";
+import type { FileKind } from "@/lib/chat/chatMediaRules";
 import {
   createOutgoingMedia,
   createOutgoingText,
 } from "@/lib/chat/chatMessages";
-import type { FileKind } from "@/lib/chat/chatMediaRules";
+import { hydrateMessage } from "@/lib/e2ee/hydrate";
+import { encryptFileForUpload, makeThumbnail } from "@/lib/e2ee/media";
+import { sendWithKeys } from "@/lib/e2ee/send";
+import { readVideoMeta } from "@/lib/stories/mediaMeta";
 import { signUpload, uploadToCloudinary } from "@/lib/api/upload";
 import { useChatListStore } from "@/store/chatListStore";
 import type { ReplyDraft } from "@/types/chat";
+import type { FileMeta, MessagePayload, ThumbMeta } from "@/types/e2ee";
+import { uuid } from "@/lib/uuid";
 
 type MediaType = FileKind | "VOICE";
 
-type TextJob = { kind: "TEXT"; text: string; replyToId: string | null };
+type UploadResult = {
+  publicId: string;
+  thumbPublicId?: string;
+  file: FileMeta;
+  thumb?: ThumbMeta;
+};
+
+type TextJob = {
+  kind: "TEXT";
+  payload: MessagePayload;
+  replyToId: string | null;
+};
 
 type MediaJob = {
   kind: "MEDIA";
@@ -24,31 +41,64 @@ type MediaJob = {
   caption: string | null;
   replyToId: string | null;
   blobUrl: string;
-  publicId: string | null;
+  duration: number | null;
+  upload: UploadResult | null;
 };
 
 type Job = TextJob | MediaJob;
 
-const buildMediaBody = (job: MediaJob, clientId: string): SendMessageBody => {
-  const common = {
-    clientId,
-    publicId: job.publicId as string,
-    replyToId: job.replyToId,
+const uploadEncrypted = async (
+  job: MediaJob,
+  signal: AbortSignal,
+  onProgress: (percent: number) => void,
+): Promise<UploadResult> => {
+  const sealed = await encryptFileForUpload(job.file);
+  const upload = await signUpload(job.type, sealed.blob.size);
+
+  await uploadToCloudinary(sealed.blob, upload, { signal, onProgress });
+
+  const file: FileMeta = {
+    mime: job.file.type || "application/octet-stream",
+    size: job.file.size,
+    key: sealed.key,
+    ...(job.type === "FILE" && { name: job.file.name }),
   };
 
-  switch (job.type) {
-    case "VOICE":
-      return { type: "VOICE", ...common };
-    case "FILE":
-      return {
-        type: "FILE",
-        ...common,
-        fileName: job.file.name,
-        content: job.caption,
+  let thumb: ThumbMeta | undefined;
+  let thumbPublicId: string | undefined;
+
+  if (job.type === "IMAGE") {
+    const small = await makeThumbnail(job.file);
+
+    if (small) {
+      file.width = small.original.width;
+      file.height = small.original.height;
+
+      const encrypted = await encryptFileForUpload(small.blob);
+      const thumbUpload = await signUpload("THUMB", encrypted.blob.size);
+      await uploadToCloudinary(encrypted.blob, thumbUpload, { signal });
+
+      thumb = {
+        key: encrypted.key,
+        mime: "image/jpeg",
+        width: small.width,
+        height: small.height,
       };
-    default:
-      return { type: job.type, ...common, content: job.caption };
+      thumbPublicId = thumbUpload.publicId;
+    }
+  } else if (job.type === "VIDEO") {
+    const meta = await readVideoMeta(job.blobUrl).catch(() => null);
+
+    if (meta) {
+      file.width = meta.width;
+      file.height = meta.height;
+      file.duration = Math.round(meta.duration);
+    }
+  } else if (job.type === "VOICE" && job.duration) {
+    file.duration = job.duration;
   }
+
+  return { publicId: upload.publicId, thumbPublicId, file, thumb };
 };
 
 export function useMessageSender({
@@ -68,7 +118,10 @@ export function useMessageSender({
 
   const cleanup = useCallback((clientId: string) => {
     const job = jobs.current.get(clientId);
-    if (job?.kind === "MEDIA") URL.revokeObjectURL(job.blobUrl);
+
+    if (job?.kind === "MEDIA") {
+      setTimeout(() => URL.revokeObjectURL(job.blobUrl), 30_000);
+    }
 
     jobs.current.delete(clientId);
     controllers.current.delete(clientId);
@@ -86,57 +139,68 @@ export function useMessageSender({
       controllers.current.set(clientId, controller);
 
       try {
-        let body: SendMessageBody;
+        let type: "TEXT" | MediaType = "TEXT";
+        let payload: MessagePayload;
+        let media: { publicId: string; thumbnailPublicId?: string } | undefined;
 
         if (job.kind === "TEXT") {
           updateMessage(clientId, { status: "sending" });
-          body = {
-            type: "TEXT",
-            clientId,
-            content: job.text,
-            replyToId: job.replyToId,
-          };
+          payload = job.payload;
         } else {
-          if (!job.publicId) {
+          type = job.type;
+
+          if (!job.upload) {
             updateMessage(clientId, { status: "uploading", uploadProgress: 0 });
-
-            const upload = await signUpload(job.type, {
-              name: job.file.name,
-              type: job.file.type,
-              size: job.file.size,
-            });
-
-            await uploadToCloudinary(job.file, upload, {
-              signal: controller.signal,
-              onProgress: (percent) =>
-                updateMessage(clientId, { uploadProgress: percent }),
-            });
-
-            job.publicId = upload.publicId;
+            job.upload = await uploadEncrypted(
+              job,
+              controller.signal,
+              (percent) => updateMessage(clientId, { uploadProgress: percent }),
+            );
           }
 
           updateMessage(clientId, {
             status: "sending",
             uploadProgress: undefined,
           });
-          body = buildMediaBody(job, clientId);
+
+          payload = {
+            v: 1,
+            ...(job.caption && { text: job.caption }),
+            file: job.upload.file,
+            thumb: job.upload.thumb,
+          };
+          media = {
+            publicId: job.upload.publicId,
+            thumbnailPublicId: job.upload.thumbPublicId,
+          };
         }
 
-        const { message } = await sendMessage(conversationId, body);
+        const message = await sendWithKeys(
+          { conversationId, payload },
+          (encrypted) =>
+            sendMessage(conversationId, {
+              clientId,
+              type,
+              replyToId: job.replyToId,
+              media,
+              ...encrypted,
+            }).then((result) => result.message),
+        );
 
-        upsertMessage(message);
+        const hydrated = await hydrateMessage(conversationId, message);
+        upsertMessage(hydrated);
 
         const chatList = useChatListStore.getState();
         const applied = chatList.applyMessage(conversationId, {
           lastMessage: {
-            type: message.type,
-            content: message.content,
-            fileName: message.fileName,
+            type: hydrated.type,
+            content: hydrated.content,
+            fileName: hydrated.fileName,
             senderName: null,
             isMine: true,
             deleted: false,
           },
-          lastMessageAt: message.createdAt,
+          lastMessageAt: hydrated.createdAt,
           incrementUnread: false,
         });
         if (!applied) chatList.invalidate();
@@ -156,7 +220,7 @@ export function useMessageSender({
         );
       }
     },
-    [conversationId, updateMessage, upsertMessage, cleanup],
+    [conversationId, meId, updateMessage, upsertMessage, cleanup],
   );
 
   const sendText = useCallback(
@@ -165,7 +229,7 @@ export function useMessageSender({
 
       jobs.current.set(outgoing.id, {
         kind: "TEXT",
-        text,
+        payload: { v: 1, text },
         replyToId: reply?.id ?? null,
       });
       appendMessage(outgoing);
@@ -184,7 +248,7 @@ export function useMessageSender({
         duration?: number | null;
       } = {},
     ) => {
-      const clientId = crypto.randomUUID();
+      const clientId = uuid();
       const blobUrl = URL.createObjectURL(file);
       const caption = options.caption ?? null;
       const reply = options.reply ?? null;
@@ -196,7 +260,8 @@ export function useMessageSender({
         caption,
         replyToId: reply?.id ?? null,
         blobUrl,
-        publicId: null,
+        duration: options.duration ?? null,
+        upload: null,
       });
 
       appendMessage(
@@ -238,12 +303,7 @@ export function useMessageSender({
     [sendFile],
   );
 
-  const retry = useCallback(
-    (clientId: string) => {
-      void run(clientId);
-    },
-    [run],
-  );
+  const retry = useCallback((clientId: string) => void run(clientId), [run]);
 
   const discard = useCallback(
     (clientId: string) => {

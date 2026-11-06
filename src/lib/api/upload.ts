@@ -19,8 +19,14 @@ const requestSignedUpload = async (
   return data.upload;
 };
 
-export const signUpload = (kind: ChatUploadKind, source: UploadSource) =>
-  requestSignedUpload("/api/uploads/chat/sign", kind, source);
+export const signUpload = async (kind: ChatUploadKind, size: number) => {
+  const data = await apiRequest<{ upload: SignedUpload }>("/api/uploads/chat/sign", {
+    method: "POST",
+    body: JSON.stringify({ kind, size }),
+  });
+
+  return data.upload;
+};
 
 export const signStoryUpload = (kind: StoryUploadKind, source: UploadSource) =>
   requestSignedUpload("/api/uploads/story/sign", kind, source);

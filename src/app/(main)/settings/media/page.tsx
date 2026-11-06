@@ -34,6 +34,7 @@ import { DELETE_EVERYONE_WINDOW_MS } from "@/lib/chat/messageRules";
 import { useAuthStore } from "@/store/authStore";
 import { useChatListStore } from "@/store/chatListStore";
 import type { MediaItem } from "@/types/media";
+import { downloadDecrypted } from "@/lib/e2ee/media";
 
 type Tab = "MEDIA" | "DOCS";
 
@@ -137,8 +138,9 @@ export default function MediaSettingsPage() {
       : (chats.find((chat) => chat.id === activeScope)?.name ?? "this chat");
 
   const handleDownload = (item: MediaItem) => {
-    void downloadFile(item.mediaUrl, downloadName(item));
-    toast.success("Download started.");
+    downloadDecrypted(item, downloadName(item))
+      .then(() => toast.success("Download started."))
+      .catch((error) => toast.error(error.message));
   };
 
   const showInChat = (item: MediaItem) =>

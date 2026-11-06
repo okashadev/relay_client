@@ -1,12 +1,14 @@
 import { apiFetch } from "@/lib/api/api";
 
 export class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+    readonly details?: unknown,
+  ) {
     super(message);
     this.name = "ApiError";
-    this.status = status;
   }
 }
 
@@ -18,7 +20,12 @@ export const apiRequest = async <T>(
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new ApiError(data?.error || "Something went wrong.", res.status);
+    throw new ApiError(
+      data?.error || "Something went wrong.",
+      res.status,
+      data?.code,
+      data?.details,
+    );
   }
 
   return data as T;

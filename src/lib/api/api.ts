@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/authStore";
+import { endSession } from "../e2ee/lifecycle";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -64,7 +65,9 @@ export const apiFetch = async (path: string, options: RequestInit = {}) => {
 
 export const logoutUser = async () => {
   try {
-    await fetch(`/api/auth/logout`, {
+    endSession();
+
+    await fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
     });

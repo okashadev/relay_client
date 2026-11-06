@@ -7,6 +7,7 @@ export type AuthUser = {
   email: string;
   bio: string | null;
   avatar?: string | null;
+  accountPublicKey: string | null;
   isEmailVerified: boolean;
   provider: "LOCAL" | "GOOGLE";
 };
