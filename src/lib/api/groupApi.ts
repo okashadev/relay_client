@@ -18,7 +18,7 @@ export type UpdateGroupBody = {
 const groupPath = (id: string) => `/api/group/${encodeURIComponent(id)}`;
 
 export const createGroup = (body: CreateGroupBody, signal?: AbortSignal) =>
-  apiRequest<{ conversation: { id: string; name: string } }>("/api/group", {
+  apiRequest<{  success: boolean; conversation: { id: string; name: string } }>("/api/group", {
     method: "POST",
     body: JSON.stringify(body),
     signal,

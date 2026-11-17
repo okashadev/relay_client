@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Info, MoreVertical } from "lucide-react";
+import { ArrowLeft, Info, MoreVertical, ShieldCheck } from "lucide-react";
 import UserAvatar from "@/components/common/UserAvatar";
 import UserContactProfilePanel from "@/components/chats/direct/UserContactProfilePanel";
 import DeleteMessageDialog from "@/components/chats/shared/DeleteMessageDialog";
@@ -20,7 +20,10 @@ import { presenceLabel, usePresence } from "@/hooks/usePresence";
 import { useTypers } from "@/hooks/useTypers";
 import { typingLabel } from "@/lib/chat/typing";
 import type { DirectConversationDetails } from "@/types/chat";
-import SafetyNumberDialog from "./SafetyNumberDialog";
+import SafetyNumberDialog from "@/components/chats/direct/SafetyNumberDialog";
+import TrustBanner from "@/components/chats/direct/TrustBanner";
+import { usePeerTrust } from "@/hooks/usePeerTrust";
+import { acceptPeerChanges } from "@/lib/e2ee/trust";
 import { useAuthStore } from "@/store/authStore";
 
 interface DirectChatProps {
@@ -35,6 +38,7 @@ export default function DirectChat({
   const router = useRouter();
   const session = useChatSession({ conversation, messagesState });
   const contact = conversation.otherUser;
+
   const { me, blockedByMe } = useChatMeta(conversation, contact.id);
   const meId = useAuthStore((s) => s.user?.id);
   const myPublicKey = useAuthStore((s) => s.user?.accountPublicKey);
@@ -54,6 +58,7 @@ export default function DirectChat({
 
   const [showProfile, setShowProfile] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const trust = usePeerTrust(meId!, contact.id);
   const [showSafety, setShowSafety] = useState(false);
 
   const closeProfile = useCallback(() => setShowProfile(false), []);
@@ -91,8 +96,15 @@ export default function DirectChat({
             </div>
 
             <div className="min-w-0">
-              <h2 className="text-xs font-bold text-[#1D4533] truncate">
-                {contact.name}
+              <h2 className="text-xs font-bold text-[#1D4533] truncate flex items-center gap-1">
+                <span className="truncate">{contact.name}</span>
+                {trust === "VERIFIED" && (
+                  <ShieldCheck
+                    size={12}
+                    aria-label="Verified"
+                    className="text-emerald-600 shrink-0"
+                  />
+                )}
               </h2>
               <p
                 className={`text-[10px] font-medium truncate ${
@@ -147,6 +159,12 @@ export default function DirectChat({
             ) : null
           }
         />
+        <TrustBanner
+          name={contact.name}
+          status={trust}
+          onVerify={() => setShowSafety(true)}
+          onDismiss={() => void acceptPeerChanges(meId!, contact.id)}
+        />
 
         {canSend ? (
           <MessageInput
@@ -186,6 +204,7 @@ export default function DirectChat({
           isMuted={me.isMuted}
           isBlocked={blockedByMe}
           onVerify={() => setShowSafety(true)}
+          trust={trust}
           onMute={() => void menu.toggleMute()}
           onClearChat={menu.requestDelete}
           onBlock={menu.requestBlock}
@@ -204,14 +223,10 @@ export default function DirectChat({
         <DeleteMessageDialog {...session.deleteDialog} />
       )}
 
-      {showSafety && meId && contact.accountPublicKey && myPublicKey && (
+      {showSafety && meId && (
         <SafetyNumberDialog
-          me={{ id: meId, publicKey: myPublicKey }}
-          other={{
-            id: contact.id,
-            name: contact.name,
-            publicKey: contact.accountPublicKey,
-          }}
+          me={{ id: meId }}
+          other={{ id: contact.id, name: contact.name }}
           onClose={() => setShowSafety(false)}
         />
       )}

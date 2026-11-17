@@ -5,6 +5,7 @@ import {
   BellOff,
   CheckCircle2,
   ShieldCheck,
+  ShieldQuestion,
   Trash2,
   X,
 } from "lucide-react";
@@ -12,6 +13,7 @@ import UserAvatar from "@/components/common/UserAvatar";
 import { formatLastSeen } from "@/lib/format";
 import type { ChatUser } from "@/types/chat";
 import { usePresence } from "@/hooks/usePresence";
+import { TrustStatus } from "@/store/trustStore";
 
 interface UserContactProfilePanelProps {
   user: ChatUser;
@@ -22,6 +24,7 @@ interface UserContactProfilePanelProps {
   onClearChat?: () => void;
   onBlock?: () => void;
   onVerify?: () => void;
+  trust?: TrustStatus | null;
 }
 
 export default function UserContactProfilePanel({
@@ -33,6 +36,7 @@ export default function UserContactProfilePanel({
   onVerify,
   isMuted = false,
   isBlocked = false,
+  trust,
 }: UserContactProfilePanelProps) {
   const presence = usePresence(user.id, {
     status: user.status,
@@ -66,8 +70,11 @@ export default function UserContactProfilePanel({
     },
     {
       key: "verify",
-      label: "Verify security code",
-      icon: ShieldCheck,
+      label:
+        trust === "VERIFIED"
+          ? "Security code · Verified"
+          : "Verify security code",
+      icon: trust === "VERIFIED" ? ShieldCheck : ShieldQuestion,
       danger: false,
       onClick: onVerify,
     },

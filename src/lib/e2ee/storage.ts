@@ -2,18 +2,25 @@ import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 type KeyRecord = { secretKey: Uint8Array; publicKey: string };
 
+export type PeerPin = {
+  devices: Record<string, string>;
+  verified: boolean;
+  since: string;
+};
+
 interface Schema extends DBSchema {
   account: { key: string; value: KeyRecord };
   device: { key: string; value: KeyRecord };
   verified: { key: string; value: string };
+  peers: { key: string; value: PeerPin };
 }
 
 let dbPromise: Promise<IDBPDatabase<Schema>> | null = null;
 
 const database = () =>
-  (dbPromise ??= openDB<Schema>("relay-e2ee", 2, {
+  (dbPromise ??= openDB<Schema>("relay-e2ee", 3, {
     upgrade(db) {
-      for (const name of ["account", "device", "verified"] as const) {
+      for (const name of ["account", "device", "verified", "peers"] as const) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
       }
     },
@@ -45,11 +52,8 @@ export const saveAccount = async (userId: string, value: KeyRecord) =>
 export const clearAccount = async (userId: string) =>
   (await database()).delete("account", userId);
 
-export const getVerified = async (key: string) =>
-  (await database()).get("verified", key);
+export const getPeer = async (key: string) =>
+  (await database()).get("peers", key);
 
-export const setVerified = async (key: string, publicKey: string | null) => {
-  const db = await database();
-  if (publicKey) await db.put("verified", publicKey, key);
-  else await db.delete("verified", key);
-};
+export const setPeer = async (key: string, value: PeerPin) =>
+  void (await (await database()).put("peers", value, key));
