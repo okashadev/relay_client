@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
-import MarketingShell from "@/components/marketing/MarketingShell";
+import MarketingShell from "@/components/landing/MarketingShell";
 import { SITE } from "@/lib/site";
 
 const display = Bricolage_Grotesque({

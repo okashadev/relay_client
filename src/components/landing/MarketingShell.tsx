@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { ReactLenis } from "lenis/react";
 import { useReducedMotion } from "framer-motion";
-import SiteFooter from "@/components/marketing/SiteFooter";
-import SiteNav from "@/components/marketing/SiteNav";
+import SiteFooter from "@/components/landing/SiteFooter";
+import SiteNav from "@/components/landing/SiteNav";
 
 export default function MarketingShell({
   children,

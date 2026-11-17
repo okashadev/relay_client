@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+} from "framer-motion";
 import { Menu, X } from "lucide-react";
 import RelayLogo from "@/components/common/RelayLogo";
 import { useAnchorScroll } from "@/hooks/useAnchorScroll";
@@ -28,7 +33,6 @@ export default function SiteNav() {
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Neeche scroll par chhup, upar scroll par wapas
   useMotionValueEvent(scrollY, "change", (y) => {
     setHidden(y > (scrollY.getPrevious() ?? 0) && y > 240);
   });
@@ -50,11 +54,17 @@ export default function SiteNav() {
         aria-label="Main"
         className="relative mx-auto flex w-full max-w-4xl items-center justify-between gap-3 rounded-full border border-[#1D4533]/10 bg-[#F7EAE0]/80 py-2 pl-3 pr-2 backdrop-blur-xl"
       >
-        <Link href="/" className={`flex items-center gap-2.5 rounded-full ${FOCUS}`} aria-label="Relay home">
+        <Link
+          href="/"
+          className={`flex items-center gap-2.5 rounded-full ${FOCUS}`}
+          aria-label="Relay home"
+        >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1D4533] shadow-md">
             <RelayLogo size={40} variant="shadow" />
           </span>
-          <span className="font-display text-lg font-bold tracking-tight text-[#1D4533]">Relay</span>
+          <span className="font-display text-lg font-bold tracking-tight text-[#1D4533]">
+            Relay
+          </span>
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
@@ -117,7 +127,10 @@ export default function SiteNav() {
                 </Link>
               ))}
               {!signedIn && (
-                <Link href="/login" className="block rounded-2xl px-4 py-3 text-sm font-bold text-[#1D4533] hover:bg-[#1D4533]/8">
+                <Link
+                  href="/login"
+                  className="block rounded-2xl px-4 py-3 text-sm font-bold text-[#1D4533] hover:bg-[#1D4533]/8"
+                >
                   Sign in
                 </Link>
               )}

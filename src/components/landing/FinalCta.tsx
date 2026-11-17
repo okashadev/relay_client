@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Magnetic from "@/components/marketing/Magnetic";
+import Magnetic from "@/components/landing/Magnetic";
 import { useSessionHint } from "@/hooks/useSessionHint";
 
 export default function FinalCta() {

@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import ChatDemo from "@/components/marketing/ChatDemo";
-import Magnetic from "@/components/marketing/Magnetic";
+import ChatDemo from "@/components/landing/ChatDemo";
+import Magnetic from "@/components/landing/Magnetic";
 import { useAnchorScroll } from "@/hooks/useAnchorScroll";
 import { useSessionHint } from "@/hooks/useSessionHint";
 import { EASE } from "@/lib/motion";
@@ -31,7 +31,7 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative mx-3 mt-3 overflow-hidden rounded-[2rem] bg-[#1D4533] text-[#F7EAE0] sm:rounded-[2.75rem]"
+      className="relative mx-3 mt-20 overflow-hidden rounded-[2rem] bg-[#1D4533] text-[#F7EAE0] sm:rounded-[2.75rem]"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="animate-drift absolute -left-24 top-1/4 h-96 w-96 rounded-full bg-[#2A5C46] blur-3xl" />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import LegalPage from "@/components/marketing/LegalPage";
+import LegalPage from "@/components/landing/LegalPage";
 import { PRIVACY_INTRO, PRIVACY_SECTIONS } from "@/lib/legal/privacy";
 import { SITE } from "@/lib/site";
 
